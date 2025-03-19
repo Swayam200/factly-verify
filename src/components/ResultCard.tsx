@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 
 const ResultCard: React.FC = () => {
-  const { currentResult, currentQuery, isLoading } = useFactCheck();
+  const { currentResult, currentQuery, isLoading, setCurrentQuery, setCurrentResult } = useFactCheck();
   const [showAnimation, setShowAnimation] = useState(false);
   
   // Reset animation when result changes
@@ -24,6 +24,12 @@ const ResultCard: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [currentResult]);
+  
+  // Handle new check button
+  const handleNewCheck = () => {
+    setCurrentQuery('');
+    setCurrentResult(null);
+  };
   
   // Loading state
   if (isLoading) {
@@ -132,7 +138,12 @@ const ResultCard: React.FC = () => {
             <span className="hidden sm:inline">Share</span>
           </Button>
           
-          <Button variant="default" size="sm" className="gap-1.5 ml-auto">
+          <Button 
+            variant="default" 
+            size="sm" 
+            className="gap-1.5 ml-auto"
+            onClick={handleNewCheck}
+          >
             <span>New Check</span>
             <ArrowRight size={16} />
           </Button>
