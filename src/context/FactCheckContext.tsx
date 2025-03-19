@@ -1,4 +1,6 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { openRouterModels } from '@/utils/apiManager';
 
 export type ResultStatus = 'true' | 'false' | 'neutral' | 'unknown';
 
@@ -41,6 +43,10 @@ interface FactCheckContextType {
   hasRequiredKeys: boolean;
   isModalOpen: boolean;
   setIsModalOpen: (isOpen: boolean) => void;
+  selectedModel: string;
+  setSelectedModel: (modelId: string) => void;
+  isDarkMode: boolean;
+  toggleDarkMode: () => void;
 }
 
 const defaultContextValue: FactCheckContextType = {
@@ -57,6 +63,10 @@ const defaultContextValue: FactCheckContextType = {
   hasRequiredKeys: false,
   isModalOpen: false,
   setIsModalOpen: () => {},
+  selectedModel: openRouterModels.deepseek.id,
+  setSelectedModel: () => {},
+  isDarkMode: false,
+  toggleDarkMode: () => {},
 };
 
 const FactCheckContext = createContext<FactCheckContextType>(defaultContextValue);
@@ -74,10 +84,47 @@ export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }
   const [resultsHistory, setResultsHistory] = useState<FactCheckResult[]>([]);
   const [apiKeys, setApiKeys] = useState<ApiKeys>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedModel, setSelectedModel] = useState(openRouterModels.deepseek.id);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Initialize dark mode from localStorage or system preference
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('factcheck_theme');
+    if (savedTheme === 'dark') {
+      setIsDarkMode(true);
+      document.documentElement.classList.add('dark');
+    } else if (savedTheme === 'light') {
+      setIsDarkMode(false);
+      document.documentElement.classList.remove('dark');
+    } else {
+      // Check system preference
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setIsDarkMode(systemPrefersDark);
+      if (systemPrefersDark) {
+        document.documentElement.classList.add('dark');
+      }
+    }
+  }, []);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(prev => {
+      const newMode = !prev;
+      localStorage.setItem('factcheck_theme', newMode ? 'dark' : 'light');
+      
+      if (newMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      
+      return newMode;
+    });
+  };
 
   useEffect(() => {
     const savedHistory = localStorage.getItem('factcheckHistory');
     const savedApiKeys = localStorage.getItem('factcheckApiKeys');
+    const savedModel = localStorage.getItem('factcheck_selected_model');
     
     if (savedHistory) {
       try {
@@ -96,6 +143,10 @@ export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }
     } else {
       setIsModalOpen(true);
     }
+    
+    if (savedModel) {
+      setSelectedModel(savedModel);
+    }
   }, []);
   
   useEffect(() => {
@@ -105,6 +156,10 @@ export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }
   useEffect(() => {
     localStorage.setItem('factcheckApiKeys', JSON.stringify(apiKeys));
   }, [apiKeys]);
+  
+  useEffect(() => {
+    localStorage.setItem('factcheck_selected_model', selectedModel);
+  }, [selectedModel]);
 
   const addToHistory = (result: FactCheckResult) => {
     setResultsHistory(prev => {
@@ -148,6 +203,10 @@ export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }
         hasRequiredKeys,
         isModalOpen,
         setIsModalOpen,
+        selectedModel,
+        setSelectedModel,
+        isDarkMode,
+        toggleDarkMode,
       }}
     >
       {children}

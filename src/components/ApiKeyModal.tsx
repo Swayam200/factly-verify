@@ -5,43 +5,35 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Info, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Info, X, CheckCircle, AlertCircle, ExternalLink } from 'lucide-react';
 import { validateApiKey } from '@/utils/apiManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const ApiKeyModal = () => {
   const { apiKeys, setApiKey, isModalOpen, setIsModalOpen, hasRequiredKeys } = useFactCheck();
-  const [openaiKey, setOpenaiKey] = useState(apiKeys.openai || '');
-  const [perplexityKey, setPerplexityKey] = useState(apiKeys.perplexity || '');
   const [openrouterKey, setOpenrouterKey] = useState(apiKeys.openrouter || '');
-  const [googleKey, setGoogleKey] = useState(apiKeys.google || '');
-  const [newsapiKey, setNewsapiKey] = useState(apiKeys.newsapi || '');
-  const [isOpenAIValid, setIsOpenAIValid] = useState(Boolean(apiKeys.openai));
-  const [isPerplexityValid, setIsPerplexityValid] = useState(Boolean(apiKeys.perplexity));
+  const [perplexityKey, setPerplexityKey] = useState(apiKeys.perplexity || '');
+  const [openaiKey, setOpenaiKey] = useState(apiKeys.openai || '');
   const [isOpenRouterValid, setIsOpenRouterValid] = useState(Boolean(apiKeys.openrouter));
+  const [isPerplexityValid, setIsPerplexityValid] = useState(Boolean(apiKeys.perplexity));
+  const [isOpenAIValid, setIsOpenAIValid] = useState(Boolean(apiKeys.openai));
 
   const handleSave = () => {
-    if (openaiKey) {
-      setApiKey('openai', openaiKey);
+    if (openrouterKey) {
+      setApiKey('openrouter', openrouterKey);
     }
     if (perplexityKey) {
       setApiKey('perplexity', perplexityKey);
     }
-    if (openrouterKey) {
-      setApiKey('openrouter', openrouterKey);
-    }
-    if (googleKey) {
-      setApiKey('google', googleKey);
-    }
-    if (newsapiKey) {
-      setApiKey('newsapi', newsapiKey);
+    if (openaiKey) {
+      setApiKey('openai', openaiKey);
     }
     setIsModalOpen(false);
   };
 
-  const validateOpenAI = (key: string) => {
-    const isValid = validateApiKey(key, 'openai');
-    setIsOpenAIValid(isValid);
+  const validateOpenRouter = (key: string) => {
+    const isValid = validateApiKey(key, 'openrouter');
+    setIsOpenRouterValid(isValid);
     return isValid;
   };
 
@@ -51,9 +43,9 @@ const ApiKeyModal = () => {
     return isValid;
   };
 
-  const validateOpenRouter = (key: string) => {
-    const isValid = validateApiKey(key, 'openrouter');
-    setIsOpenRouterValid(isValid);
+  const validateOpenAI = (key: string) => {
+    const isValid = validateApiKey(key, 'openai');
+    setIsOpenAIValid(isValid);
     return isValid;
   };
 
@@ -63,15 +55,15 @@ const ApiKeyModal = () => {
         <DialogHeader>
           <DialogTitle className="text-2xl font-semibold text-center">API Keys Setup</DialogTitle>
           <DialogDescription className="text-center">
-            Enter your API keys to enable fact-checking functionality.
+            Enter your API key to enable fact-checking functionality.
           </DialogDescription>
         </DialogHeader>
         
         <Tabs defaultValue="openrouter">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="openrouter">OpenRouter (Free)</TabsTrigger>
-            <TabsTrigger value="perplexity">Perplexity API</TabsTrigger>
-            <TabsTrigger value="openai">OpenAI API</TabsTrigger>
+            <TabsTrigger value="openrouter" className="text-sm">OpenRouter (Free)</TabsTrigger>
+            <TabsTrigger value="perplexity" className="text-sm">Perplexity API</TabsTrigger>
+            <TabsTrigger value="openai" className="text-sm">OpenAI API</TabsTrigger>
           </TabsList>
           
           <TabsContent value="openrouter" className="space-y-4 mt-4">
@@ -104,15 +96,24 @@ const ApiKeyModal = () => {
                   validateOpenRouter(e.target.value);
                 }}
               />
-              <p className="text-sm text-muted-foreground">
-                Get your free API key from the <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">OpenRouter dashboard</a>.
-              </p>
+              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                <span>Get your free API key from</span>
+                <a 
+                  href="https://openrouter.ai/keys" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-primary hover:underline inline-flex items-center gap-0.5"
+                >
+                  OpenRouter
+                  <ExternalLink size={12} />
+                </a>
+              </div>
             </div>
             
             <div className="bg-green-50 dark:bg-green-900/30 p-3 rounded-md flex items-start gap-2">
               <Info size={20} className="text-green-500 mt-0.5 flex-shrink-0" />
               <div className="text-sm text-green-800 dark:text-green-200">
-                OpenRouter provides free access to DeepSeek R1 model which offers excellent fact-checking capabilities at no cost.
+                OpenRouter provides <strong>free access</strong> to DeepSeek R1 and Google Gemini Pro models which offer excellent fact-checking capabilities.
               </div>
             </div>
           </TabsContent>
@@ -122,7 +123,6 @@ const ApiKeyModal = () => {
               <div className="flex items-center justify-between">
                 <Label htmlFor="perplexity" className="text-lg font-medium flex items-center gap-1">
                   Perplexity API Key
-                  <span className="text-rose-500">*</span>
                 </Label>
                 {isPerplexityValid ? (
                   <span className="text-green-500 flex items-center gap-1 text-sm">
@@ -147,15 +147,17 @@ const ApiKeyModal = () => {
                   validatePerplexity(e.target.value);
                 }}
               />
-              <p className="text-sm text-muted-foreground">
-                Get your API key from the <a href="https://www.perplexity.ai/settings/api" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Perplexity dashboard</a>.
-              </p>
-            </div>
-            
-            <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-md flex items-start gap-2">
-              <Info size={20} className="text-blue-500 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-blue-800 dark:text-blue-200">
-                Perplexity AI offers a free tier with limited usage. Sign up to get your API key.
+              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                <span>Get your API key from</span>
+                <a 
+                  href="https://www.perplexity.ai/settings/api" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-primary hover:underline inline-flex items-center gap-0.5"
+                >
+                  Perplexity
+                  <ExternalLink size={12} />
+                </a>
               </div>
             </div>
           </TabsContent>
@@ -165,7 +167,6 @@ const ApiKeyModal = () => {
               <div className="flex items-center justify-between">
                 <Label htmlFor="openai" className="text-lg font-medium flex items-center gap-1">
                   OpenAI API Key
-                  <span className="text-rose-500">*</span>
                 </Label>
                 {isOpenAIValid ? (
                   <span className="text-green-500 flex items-center gap-1 text-sm">
@@ -190,39 +191,18 @@ const ApiKeyModal = () => {
                   validateOpenAI(e.target.value);
                 }}
               />
-              <p className="text-sm text-muted-foreground">
-                Get your API key from the <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">OpenAI dashboard</a>.
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="google" className="text-lg font-medium">Google API Key (Optional)</Label>
-              <Input
-                id="google"
-                type="password"
-                placeholder="Optional for enhanced search"
-                className="glass-input"
-                value={googleKey}
-                onChange={(e) => setGoogleKey(e.target.value)}
-              />
-              <p className="text-sm text-muted-foreground">
-                Optional. Enhances source verification with Google Search.
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="newsapi" className="text-lg font-medium">News API Key (Optional)</Label>
-              <Input
-                id="newsapi"
-                type="password"
-                placeholder="Optional for news verification"
-                className="glass-input"
-                value={newsapiKey}
-                onChange={(e) => setNewsapiKey(e.target.value)}
-              />
-              <p className="text-sm text-muted-foreground">
-                Optional. Adds news source verification capability.
-              </p>
+              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                <span>Get your API key from</span>
+                <a 
+                  href="https://platform.openai.com/api-keys" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-primary hover:underline inline-flex items-center gap-0.5"
+                >
+                  OpenAI
+                  <ExternalLink size={12} />
+                </a>
+              </div>
             </div>
           </TabsContent>
         </Tabs>

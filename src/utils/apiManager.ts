@@ -1,3 +1,4 @@
+
 // API key management utility
 
 interface ApiKeyStorage {
@@ -83,4 +84,18 @@ export const maskApiKey = (key: string): string => {
   const lastFour = key.substring(key.length - 4);
   
   return `${firstFour}••••••••${lastFour}`;
+};
+
+// OpenRouter models configuration
+export const openRouterModels = {
+  deepseek: {
+    id: "deepseek/deepseek-r1:free",
+    name: "DeepSeek R1",
+    description: "Free open-source model with 671B parameters"
+  },
+  gemini: {
+    id: "google/gemini-2.0-pro-exp-02-05:free",
+    name: "Google Gemini Pro 2.0",
+    description: "Free experimental model with 2M context window"
+  }
 };

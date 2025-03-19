@@ -1,4 +1,6 @@
+
 import { FactCheckResult, ResultStatus, Source } from '../context/FactCheckContext';
+import { openRouterModels } from './apiManager';
 
 // Helper to generate random ID for each check
 const generateId = (): string => {
@@ -42,13 +44,14 @@ const formatSources = (sources: any[]): Source[] => {
   }));
 };
 
-// Verify fact with OpenRouter API (DeepSeek R1 model)
+// Verify fact with OpenRouter API (using specified model)
 export const verifyFactWithOpenRouter = async (
   query: string, 
-  apiKey: string
+  apiKey: string,
+  modelId: string = openRouterModels.deepseek.id
 ): Promise<FactCheckResult> => {
   try {
-    console.log("Verifying fact with OpenRouter API (DeepSeek R1)...");
+    console.log(`Verifying fact with OpenRouter API using model: ${modelId}...`);
     
     const url = 'https://openrouter.ai/api/v1/chat/completions';
     
@@ -73,7 +76,7 @@ export const verifyFactWithOpenRouter = async (
         'X-Title': 'Real or Fake Fact-Checker'
       },
       body: JSON.stringify({
-        model: "deepseek/deepseek-r1:free",
+        model: modelId,
         messages: [
           {
             role: 'system',
@@ -155,16 +158,19 @@ export const verifyFact = async (
     newsapi?: string;
     perplexity?: string;
     openrouter?: string;
-  }
+  },
+  modelPreference?: string
 ): Promise<FactCheckResult> => {
   try {
     if (!query.trim()) {
       throw new Error('Please enter a claim to verify');
     }
     
-    // Try with OpenRouter API first (since it's free)
+    // Try with OpenRouter API first (since it has free models)
     if (apiKeys.openrouter) {
-      return await verifyFactWithOpenRouter(query, apiKeys.openrouter);
+      // Use specified model or default to DeepSeek
+      const modelId = modelPreference || openRouterModels.deepseek.id;
+      return await verifyFactWithOpenRouter(query, apiKeys.openrouter, modelId);
     }
     
     // Try with Perplexity API second
