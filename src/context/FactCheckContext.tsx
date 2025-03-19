@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export type ResultStatus = 'true' | 'false' | 'neutral' | 'unknown';
@@ -25,6 +24,7 @@ interface ApiKeys {
   google?: string;
   newsapi?: string;
   perplexity?: string;
+  openrouter?: string;
 }
 
 interface FactCheckContextType {
@@ -75,7 +75,6 @@ export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }
   const [apiKeys, setApiKeys] = useState<ApiKeys>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Load saved data from localStorage
   useEffect(() => {
     const savedHistory = localStorage.getItem('factcheckHistory');
     const savedApiKeys = localStorage.getItem('factcheckApiKeys');
@@ -95,12 +94,10 @@ export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }
         console.error('Error parsing saved API keys:', error);
       }
     } else {
-      // If no API keys are found, show the modal automatically
       setIsModalOpen(true);
     }
   }, []);
   
-  // Save data to localStorage when it changes
   useEffect(() => {
     localStorage.setItem('factcheckHistory', JSON.stringify(resultsHistory));
   }, [resultsHistory]);
@@ -111,7 +108,7 @@ export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }
 
   const addToHistory = (result: FactCheckResult) => {
     setResultsHistory(prev => {
-      const newHistory = [result, ...prev].slice(0, 50); // Keep only the most recent 50 checks
+      const newHistory = [result, ...prev].slice(0, 50);
       return newHistory;
     });
   };
@@ -127,8 +124,7 @@ export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }
     }));
   };
 
-  // Check if required API keys are available (either OpenAI or Perplexity)
-  const hasRequiredKeys = Boolean(apiKeys.openai || apiKeys.perplexity);
+  const hasRequiredKeys = Boolean(apiKeys.openrouter || apiKeys.perplexity || apiKeys.openai);
 
   return (
     <FactCheckContext.Provider

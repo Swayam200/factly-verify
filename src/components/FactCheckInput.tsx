@@ -32,7 +32,7 @@ const FactCheckInput: React.FC = () => {
     if (!hasRequiredKeys) {
       setIsModalOpen(true);
       toast.error('API key required', {
-        description: 'Please set up your Perplexity or OpenAI API key first'
+        description: 'Please set up your OpenRouter, Perplexity or OpenAI API key first'
       });
       return;
     }

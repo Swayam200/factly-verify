@@ -1,4 +1,3 @@
-
 // API key management utility
 
 interface ApiKeyStorage {
@@ -53,7 +52,7 @@ export const apiKeyStorage: ApiKeyStorage = {
   }
 };
 
-export const validateApiKey = (key: string, type: 'openai' | 'google' | 'newsapi' | 'perplexity'): boolean => {
+export const validateApiKey = (key: string, type: 'openai' | 'google' | 'newsapi' | 'perplexity' | 'openrouter'): boolean => {
   if (!key || key.trim() === '') {
     return false;
   }
@@ -64,6 +63,8 @@ export const validateApiKey = (key: string, type: 'openai' | 'google' | 'newsapi
       return key.startsWith('sk-') && key.length > 20;
     case 'perplexity':
       return key.startsWith('pplx-') && key.length > 20;
+    case 'openrouter':
+      return key.length > 20; // OpenRouter keys are long alphanumeric strings
     case 'google':
       return key.length > 20;
     case 'newsapi':

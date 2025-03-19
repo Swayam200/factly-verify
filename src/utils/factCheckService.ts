@@ -42,7 +42,166 @@ const formatSources = (sources: any[]): Source[] => {
   }));
 };
 
-// Verify fact with Perplexity API
+// Verify fact with OpenRouter API (DeepSeek R1 model)
+export const verifyFactWithOpenRouter = async (
+  query: string, 
+  apiKey: string
+): Promise<FactCheckResult> => {
+  try {
+    console.log("Verifying fact with OpenRouter API (DeepSeek R1)...");
+    
+    const url = 'https://openrouter.ai/api/v1/chat/completions';
+    
+    const systemPrompt = `
+    You are a factual analysis assistant that evaluates claims for truthfulness.
+    
+    Analyze the claim provided and return ONLY a valid JSON object with these fields:
+    - verdict: "True", "False", "Partially True", or "Unknown"
+    - confidence: A number between 0 and 1 indicating your confidence
+    - explanation: A detailed explanation of why the claim is true or false
+    - sources: An array of sources with "url", "title", "snippet", and "reliability" (0-1 number) fields
+    
+    DO NOT include any text before or after the JSON.
+    `;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': window.location.href,
+        'X-Title': 'Real or Fake Fact-Checker'
+      },
+      body: JSON.stringify({
+        model: "deepseek/deepseek-r1:free",
+        messages: [
+          {
+            role: 'system',
+            content: systemPrompt
+          },
+          {
+            role: 'user',
+            content: `Fact check the following claim: "${query}"`
+          }
+        ],
+        temperature: 0.2,
+        max_tokens: 1500
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('OpenRouter API error:', errorData);
+      throw new Error(`OpenRouter API error: ${errorData.error?.message || response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    // Extract and parse the JSON response from the message content
+    const content = data.choices[0]?.message?.content || '';
+    console.log("OpenRouter raw response:", content);
+    
+    let analysis;
+    try {
+      // Try to extract JSON if wrapped in code blocks or has explanatory text
+      const jsonMatch = content.match(/```(?:json)?([\s\S]*?)```/) || content.match(/({[\s\S]*})/);
+      const jsonContent = jsonMatch ? jsonMatch[1] : content;
+      analysis = JSON.parse(jsonContent);
+    } catch (e) {
+      console.error("Failed to parse JSON from OpenRouter response:", e);
+      console.log("Attempting to extract structured information from response...");
+      
+      // Fallback: Try to extract structured information from text
+      const status = content.toLowerCase().includes('false') ? 'false' : 
+                    content.toLowerCase().includes('true') ? 'true' : 'unknown';
+      
+      return {
+        id: generateId(),
+        query,
+        status: status as ResultStatus,
+        confidenceScore: 0.6,
+        explanation: content.substring(0, 500),
+        sources: [],
+        timestamp: new Date().toISOString()
+      };
+    }
+    
+    // Process the analysis into our result format
+    const status = determineStatus(analysis);
+    const confidenceScore = determineConfidence(analysis);
+    const sources = formatSources(analysis.sources);
+    
+    return {
+      id: generateId(),
+      query,
+      status,
+      confidenceScore,
+      explanation: analysis.explanation || content.substring(0, 500),
+      sources,
+      timestamp: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('Error verifying fact with OpenRouter:', error);
+    throw new Error(error instanceof Error ? error.message : 'Failed to verify fact. Please try again later.');
+  }
+};
+
+// Main fact verification function
+export const verifyFact = async (
+  query: string,
+  apiKeys: {
+    openai?: string;
+    google?: string;
+    newsapi?: string;
+    perplexity?: string;
+    openrouter?: string;
+  }
+): Promise<FactCheckResult> => {
+  try {
+    if (!query.trim()) {
+      throw new Error('Please enter a claim to verify');
+    }
+    
+    // Try with OpenRouter API first (since it's free)
+    if (apiKeys.openrouter) {
+      return await verifyFactWithOpenRouter(query, apiKeys.openrouter);
+    }
+    
+    // Try with Perplexity API second
+    if (apiKeys.perplexity) {
+      return await verifyFactWithPerplexity(query, apiKeys.perplexity);
+    }
+    
+    // If no OpenRouter or Perplexity API key, try OpenAI
+    if (apiKeys.openai) {
+      try {
+        const result = await verifyFactWithOpenAI(query, apiKeys.openai);
+        return result;
+      } catch (error) {
+        console.error('Error with OpenAI, fallback to simple response:', error);
+        throw error;
+      }
+    }
+    
+    throw new Error('No API keys available. Please add either an OpenRouter, Perplexity, or OpenAI API key.');
+    
+  } catch (error) {
+    console.error('Error verifying fact:', error);
+    
+    // Return an error result
+    return {
+      id: generateId(),
+      query,
+      status: 'unknown',
+      confidenceScore: 0,
+      explanation: error instanceof Error ? error.message : 'An unknown error occurred',
+      sources: [],
+      timestamp: new Date().toISOString()
+    };
+  }
+};
+
+// Keep the original Perplexity and OpenAI functions
 export const verifyFactWithPerplexity = async (
   query: string, 
   apiKey: string
@@ -145,56 +304,6 @@ export const verifyFactWithPerplexity = async (
   }
 };
 
-// Main fact verification function
-export const verifyFact = async (
-  query: string,
-  apiKeys: {
-    openai?: string;
-    google?: string;
-    newsapi?: string;
-    perplexity?: string;
-  }
-): Promise<FactCheckResult> => {
-  try {
-    if (!query.trim()) {
-      throw new Error('Please enter a claim to verify');
-    }
-    
-    // Try with Perplexity API first
-    if (apiKeys.perplexity) {
-      return await verifyFactWithPerplexity(query, apiKeys.perplexity);
-    }
-    
-    // If no Perplexity API key, try OpenAI
-    if (apiKeys.openai) {
-      try {
-        const result = await verifyFactWithOpenAI(query, apiKeys.openai);
-        return result;
-      } catch (error) {
-        console.error('Error with OpenAI, fallback to simple response:', error);
-        throw error;
-      }
-    }
-    
-    throw new Error('No API keys available. Please add either a Perplexity or OpenAI API key.');
-    
-  } catch (error) {
-    console.error('Error verifying fact:', error);
-    
-    // Return an error result
-    return {
-      id: generateId(),
-      query,
-      status: 'unknown',
-      confidenceScore: 0,
-      explanation: error instanceof Error ? error.message : 'An unknown error occurred',
-      sources: [],
-      timestamp: new Date().toISOString()
-    };
-  }
-};
-
-// Keep the original OpenAI function for backward compatibility
 export const verifyFactWithOpenAI = async (
   query: string, 
   apiKey: string

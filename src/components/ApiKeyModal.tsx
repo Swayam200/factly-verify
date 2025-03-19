@@ -13,10 +13,12 @@ const ApiKeyModal = () => {
   const { apiKeys, setApiKey, isModalOpen, setIsModalOpen, hasRequiredKeys } = useFactCheck();
   const [openaiKey, setOpenaiKey] = useState(apiKeys.openai || '');
   const [perplexityKey, setPerplexityKey] = useState(apiKeys.perplexity || '');
+  const [openrouterKey, setOpenrouterKey] = useState(apiKeys.openrouter || '');
   const [googleKey, setGoogleKey] = useState(apiKeys.google || '');
   const [newsapiKey, setNewsapiKey] = useState(apiKeys.newsapi || '');
   const [isOpenAIValid, setIsOpenAIValid] = useState(Boolean(apiKeys.openai));
   const [isPerplexityValid, setIsPerplexityValid] = useState(Boolean(apiKeys.perplexity));
+  const [isOpenRouterValid, setIsOpenRouterValid] = useState(Boolean(apiKeys.openrouter));
 
   const handleSave = () => {
     if (openaiKey) {
@@ -24,6 +26,9 @@ const ApiKeyModal = () => {
     }
     if (perplexityKey) {
       setApiKey('perplexity', perplexityKey);
+    }
+    if (openrouterKey) {
+      setApiKey('openrouter', openrouterKey);
     }
     if (googleKey) {
       setApiKey('google', googleKey);
@@ -46,6 +51,12 @@ const ApiKeyModal = () => {
     return isValid;
   };
 
+  const validateOpenRouter = (key: string) => {
+    const isValid = validateApiKey(key, 'openrouter');
+    setIsOpenRouterValid(isValid);
+    return isValid;
+  };
+
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogContent className="sm:max-w-md glass-panel animate-fade-in">
@@ -56,11 +67,55 @@ const ApiKeyModal = () => {
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs defaultValue="perplexity">
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs defaultValue="openrouter">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="openrouter">OpenRouter (Free)</TabsTrigger>
             <TabsTrigger value="perplexity">Perplexity API</TabsTrigger>
             <TabsTrigger value="openai">OpenAI API</TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="openrouter" className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="openrouter" className="text-lg font-medium flex items-center gap-1">
+                  OpenRouter API Key
+                  <span className="text-rose-500">*</span>
+                </Label>
+                {isOpenRouterValid ? (
+                  <span className="text-green-500 flex items-center gap-1 text-sm">
+                    <CheckCircle size={14} />
+                    Valid
+                  </span>
+                ) : (
+                  openrouterKey && <span className="text-red-500 flex items-center gap-1 text-sm">
+                    <X size={14} />
+                    Invalid format
+                  </span>
+                )}
+              </div>
+              <Input
+                id="openrouter"
+                type="password"
+                placeholder="Your OpenRouter API Key"
+                className="glass-input"
+                value={openrouterKey}
+                onChange={(e) => {
+                  setOpenrouterKey(e.target.value);
+                  validateOpenRouter(e.target.value);
+                }}
+              />
+              <p className="text-sm text-muted-foreground">
+                Get your free API key from the <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">OpenRouter dashboard</a>.
+              </p>
+            </div>
+            
+            <div className="bg-green-50 dark:bg-green-900/30 p-3 rounded-md flex items-start gap-2">
+              <Info size={20} className="text-green-500 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-green-800 dark:text-green-200">
+                OpenRouter provides free access to DeepSeek R1 model which offers excellent fact-checking capabilities at no cost.
+              </div>
+            </div>
+          </TabsContent>
           
           <TabsContent value="perplexity" className="space-y-4 mt-4">
             <div className="space-y-2">
@@ -191,8 +246,8 @@ const ApiKeyModal = () => {
           )}
           <Button 
             onClick={handleSave} 
-            disabled={!isOpenAIValid && !isPerplexityValid}
-            className={`sm:w-auto w-full ${(!isOpenAIValid && !isPerplexityValid) ? 'opacity-50 cursor-not-allowed' : 'button-glow'}`}
+            disabled={!isOpenAIValid && !isPerplexityValid && !isOpenRouterValid}
+            className={`sm:w-auto w-full ${(!isOpenAIValid && !isPerplexityValid && !isOpenRouterValid) ? 'opacity-50 cursor-not-allowed' : 'button-glow'}`}
           >
             Save Keys
           </Button>
