@@ -24,6 +24,7 @@ interface ApiKeys {
   openai?: string;
   google?: string;
   newsapi?: string;
+  perplexity?: string;
 }
 
 interface FactCheckContextType {
@@ -126,8 +127,8 @@ export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }
     }));
   };
 
-  // Check if required API keys are available
-  const hasRequiredKeys = Boolean(apiKeys.openai);
+  // Check if required API keys are available (either OpenAI or Perplexity)
+  const hasRequiredKeys = Boolean(apiKeys.openai || apiKeys.perplexity);
 
   return (
     <FactCheckContext.Provider

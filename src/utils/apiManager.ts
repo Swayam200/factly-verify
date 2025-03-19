@@ -53,7 +53,7 @@ export const apiKeyStorage: ApiKeyStorage = {
   }
 };
 
-export const validateApiKey = (key: string, type: 'openai' | 'google' | 'newsapi'): boolean => {
+export const validateApiKey = (key: string, type: 'openai' | 'google' | 'newsapi' | 'perplexity'): boolean => {
   if (!key || key.trim() === '') {
     return false;
   }
@@ -62,6 +62,8 @@ export const validateApiKey = (key: string, type: 'openai' | 'google' | 'newsapi
   switch (type) {
     case 'openai':
       return key.startsWith('sk-') && key.length > 20;
+    case 'perplexity':
+      return key.startsWith('pplx-') && key.length > 20;
     case 'google':
       return key.length > 20;
     case 'newsapi':

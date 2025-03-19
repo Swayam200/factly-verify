@@ -5,7 +5,7 @@ import FactCheckInput from '@/components/FactCheckInput';
 import ResultCard from '@/components/ResultCard';
 import ApiKeyModal from '@/components/ApiKeyModal';
 import { useFactCheck } from '@/context/FactCheckContext';
-import { Shield, AlertTriangle } from 'lucide-react';
+import { Shield, AlertTriangle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -33,13 +33,23 @@ const Index = () => {
             AI-powered fact-checking technology.
           </p>
           
+          <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 max-w-xl mx-auto mt-2">
+            <div className="flex items-start gap-3">
+              <Info className="text-blue-500 h-5 w-5 mt-0.5 flex-shrink-0" />
+              <p className="text-blue-800 dark:text-blue-200 text-sm text-left">
+                You can now use a <strong>Perplexity API key</strong> instead of OpenAI. 
+                Get a free API key from the <a href="https://www.perplexity.ai/settings/api" target="_blank" rel="noopener noreferrer" className="underline">Perplexity dashboard</a>.
+              </p>
+            </div>
+          </div>
+          
           {!hasRequiredKeys && !isModalOpen && (
             <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 max-w-xl mx-auto mt-4">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="text-yellow-500 h-5 w-5 mt-0.5 flex-shrink-0" />
                 <div className="space-y-2">
                   <p className="text-yellow-800 dark:text-yellow-200 text-sm">
-                    API key required. Please configure your OpenAI API key to enable fact-checking functionality.
+                    API key required. Please configure your Perplexity or OpenAI API key to enable fact-checking functionality.
                   </p>
                   <Button 
                     size="sm" 

@@ -32,7 +32,7 @@ const FactCheckInput: React.FC = () => {
     if (!hasRequiredKeys) {
       setIsModalOpen(true);
       toast.error('API key required', {
-        description: 'Please set up your OpenAI API key first'
+        description: 'Please set up your Perplexity or OpenAI API key first'
       });
       return;
     }
@@ -63,7 +63,7 @@ const FactCheckInput: React.FC = () => {
     "Earth is flat",
     "Vaccines cause autism",
     "Drinking water helps hydration",
-    "COVID-19 vaccines contain microchips",
+    "New Delhi is the capital of India",
     "Exercise improves health"
   ];
   
