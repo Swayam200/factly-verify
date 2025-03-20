@@ -3,7 +3,7 @@ import React from 'react';
 import { useFactCheck } from '@/context/FactCheckContext';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { Settings, History, Github } from 'lucide-react';
+import { Settings, History, Github, Info, Scale } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NavBarProps {
@@ -21,10 +21,10 @@ const NavBar: React.FC<NavBarProps> = ({ className }) => {
       <div className="flex items-center">
         <Link to="/" className="flex items-center gap-2">
           <div className="rounded-md h-9 w-9 bg-primary flex items-center justify-center">
-            <span className="text-white font-bold text-lg">RF</span>
+            <span className="text-white font-bold text-lg">FC</span>
           </div>
           <span className="font-semibold text-xl hidden sm:inline-block">
-            Real or Fake
+            Fact Check
           </span>
         </Link>
       </div>
@@ -34,6 +34,20 @@ const NavBar: React.FC<NavBarProps> = ({ className }) => {
           <Button variant="ghost" size="sm" className="gap-1.5">
             <History size={18} />
             <span className="hidden sm:inline">History</span>
+          </Button>
+        </Link>
+        
+        <Link to="/about">
+          <Button variant="ghost" size="sm" className="gap-1.5">
+            <Info size={18} />
+            <span className="hidden sm:inline">About</span>
+          </Button>
+        </Link>
+        
+        <Link to="/legal">
+          <Button variant="ghost" size="sm" className="gap-1.5">
+            <Scale size={18} />
+            <span className="hidden sm:inline">Legal</span>
           </Button>
         </Link>
         

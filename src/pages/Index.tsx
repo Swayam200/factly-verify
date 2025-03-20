@@ -1,15 +1,17 @@
+
 import React from 'react';
 import FactCheckInput from '@/components/FactCheckInput';
 import ResultCard from '@/components/ResultCard';
 import LoadingScreen from '@/components/LoadingScreen';
-import LegalDisclaimer from '@/components/LegalDisclaimer';
 import { useFactCheck } from '@/context/FactCheckContext';
+import MovingBackground from '@/components/MovingBackground';
 
 const Index = () => {
   const { isLoading, currentQuery } = useFactCheck();
 
   return (
     <div className="container px-4 py-8 mx-auto relative z-10">
+      <MovingBackground />
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-4xl sm:text-5xl font-bold mb-3 text-gradient">Fact Check</h1>
@@ -23,10 +25,6 @@ const Index = () => {
         {isLoading && currentQuery && <LoadingScreen query={currentQuery} />}
         
         {!isLoading && <ResultCard />}
-        
-        <div className="mt-12">
-          <LegalDisclaimer className="max-w-4xl mx-auto" />
-        </div>
       </div>
     </div>
   );
