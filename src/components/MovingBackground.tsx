@@ -2,6 +2,14 @@
 import React from 'react';
 
 const MovingBackground: React.FC = () => {
+  // Define the keyframes animation as a string
+  const keyframesStyle = `
+    @keyframes moveBg {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(-25%, -25%); }
+    }
+  `;
+
   return (
     <div className="fixed inset-0 w-full h-full overflow-hidden -z-10">
       <div 
@@ -17,12 +25,8 @@ const MovingBackground: React.FC = () => {
       />
       <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
       
-      <style jsx>{`
-        @keyframes moveBg {
-          0% { transform: translate(0, 0); }
-          100% { transform: translate(-25%, -25%); }
-        }
-      `}</style>
+      {/* Use a regular style tag instead of style jsx */}
+      <style dangerouslySetInnerHTML={{ __html: keyframesStyle }} />
     </div>
   );
 };
