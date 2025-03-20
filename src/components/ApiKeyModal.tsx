@@ -5,28 +5,32 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Info, X, CheckCircle, AlertCircle, ExternalLink } from 'lucide-react';
-import { validateApiKey } from '@/utils/apiManager';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Info, X, CheckCircle, AlertCircle, ExternalLink, Check, Key } from 'lucide-react';
+import { validateApiKey, DEFAULT_OPENROUTER_API_KEY } from '@/utils/apiManager';
+import { Switch } from '@/components/ui/switch';
 
 const ApiKeyModal = () => {
-  const { apiKeys, setApiKey, isModalOpen, setIsModalOpen, hasRequiredKeys } = useFactCheck();
+  const { 
+    apiKeys, 
+    setApiKey, 
+    isModalOpen, 
+    setIsModalOpen, 
+    hasRequiredKeys,
+    useDefaultApiKey,
+    setUseDefaultApiKey
+  } = useFactCheck();
+  
   const [openrouterKey, setOpenrouterKey] = useState(apiKeys.openrouter || '');
-  const [perplexityKey, setPerplexityKey] = useState(apiKeys.perplexity || '');
-  const [openaiKey, setOpenaiKey] = useState(apiKeys.openai || '');
   const [isOpenRouterValid, setIsOpenRouterValid] = useState(Boolean(apiKeys.openrouter));
-  const [isPerplexityValid, setIsPerplexityValid] = useState(Boolean(apiKeys.perplexity));
-  const [isOpenAIValid, setIsOpenAIValid] = useState(Boolean(apiKeys.openai));
 
   const handleSave = () => {
+    if (useDefaultApiKey) {
+      setIsModalOpen(false);
+      return;
+    }
+    
     if (openrouterKey) {
       setApiKey('openrouter', openrouterKey);
-    }
-    if (perplexityKey) {
-      setApiKey('perplexity', perplexityKey);
-    }
-    if (openaiKey) {
-      setApiKey('openai', openaiKey);
     }
     setIsModalOpen(false);
   };
@@ -37,41 +41,45 @@ const ApiKeyModal = () => {
     return isValid;
   };
 
-  const validatePerplexity = (key: string) => {
-    const isValid = validateApiKey(key, 'perplexity');
-    setIsPerplexityValid(isValid);
-    return isValid;
-  };
-
-  const validateOpenAI = (key: string) => {
-    const isValid = validateApiKey(key, 'openai');
-    setIsOpenAIValid(isValid);
-    return isValid;
+  const toggleUseDefaultKey = () => {
+    setUseDefaultApiKey(!useDefaultApiKey);
   };
 
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogContent className="sm:max-w-md glass-panel animate-fade-in">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-semibold text-center">API Keys Setup</DialogTitle>
+          <DialogTitle className="text-2xl font-semibold text-center">API Key Setup</DialogTitle>
           <DialogDescription className="text-center">
-            Enter your API key to enable fact-checking functionality.
+            Configure the API key for fact-checking functionality
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs defaultValue="openrouter">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="openrouter" className="text-sm">OpenRouter (Free)</TabsTrigger>
-            <TabsTrigger value="perplexity" className="text-sm">Perplexity API</TabsTrigger>
-            <TabsTrigger value="openai" className="text-sm">OpenAI API</TabsTrigger>
-          </TabsList>
+        <div className="space-y-6">
+          <div className="flex items-center space-x-4 p-4 rounded-lg bg-primary/10">
+            <Switch 
+              id="use-default-key" 
+              checked={useDefaultApiKey} 
+              onCheckedChange={toggleUseDefaultKey} 
+            />
+            <div className="space-y-1">
+              <Label 
+                htmlFor="use-default-key" 
+                className="text-base cursor-pointer"
+              >
+                Use the built-in API key (Recommended)
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Use our provided OpenRouter API key for a seamless experience
+              </p>
+            </div>
+          </div>
           
-          <TabsContent value="openrouter" className="space-y-4 mt-4">
+          {!useDefaultApiKey && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="openrouter" className="text-lg font-medium flex items-center gap-1">
-                  OpenRouter API Key
-                  <span className="text-rose-500">*</span>
+                  Your OpenRouter API Key
                 </Label>
                 {isOpenRouterValid ? (
                   <span className="text-green-500 flex items-center gap-1 text-sm">
@@ -109,108 +117,22 @@ const ApiKeyModal = () => {
                 </a>
               </div>
             </div>
-            
-            <div className="bg-green-50 dark:bg-green-900/30 p-3 rounded-md flex items-start gap-2">
-              <Info size={20} className="text-green-500 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-green-800 dark:text-green-200">
-                OpenRouter provides <strong>free access</strong> to DeepSeek R1 and Google Gemini Pro models which offer excellent fact-checking capabilities.
-              </div>
-            </div>
-          </TabsContent>
+          )}
           
-          <TabsContent value="perplexity" className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="perplexity" className="text-lg font-medium flex items-center gap-1">
-                  Perplexity API Key
-                </Label>
-                {isPerplexityValid ? (
-                  <span className="text-green-500 flex items-center gap-1 text-sm">
-                    <CheckCircle size={14} />
-                    Valid
-                  </span>
-                ) : (
-                  perplexityKey && <span className="text-red-500 flex items-center gap-1 text-sm">
-                    <X size={14} />
-                    Invalid format
-                  </span>
-                )}
-              </div>
-              <Input
-                id="perplexity"
-                type="password"
-                placeholder="pplx-..."
-                className="glass-input"
-                value={perplexityKey}
-                onChange={(e) => {
-                  setPerplexityKey(e.target.value);
-                  validatePerplexity(e.target.value);
-                }}
-              />
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                <span>Get your API key from</span>
-                <a 
-                  href="https://www.perplexity.ai/settings/api" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="text-primary hover:underline inline-flex items-center gap-0.5"
-                >
-                  Perplexity
-                  <ExternalLink size={12} />
-                </a>
-              </div>
+          <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-md flex items-start gap-2">
+            <Info size={20} className="text-blue-500 mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-blue-800 dark:text-blue-200">
+              Your API keys are stored locally in your browser and never transmitted to our servers. They're used only to make direct API calls from your browser.
             </div>
-          </TabsContent>
+          </div>
           
-          <TabsContent value="openai" className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="openai" className="text-lg font-medium flex items-center gap-1">
-                  OpenAI API Key
-                </Label>
-                {isOpenAIValid ? (
-                  <span className="text-green-500 flex items-center gap-1 text-sm">
-                    <CheckCircle size={14} />
-                    Valid
-                  </span>
-                ) : (
-                  openaiKey && <span className="text-red-500 flex items-center gap-1 text-sm">
-                    <X size={14} />
-                    Invalid format
-                  </span>
-                )}
-              </div>
-              <Input
-                id="openai"
-                type="password"
-                placeholder="sk-..."
-                className="glass-input"
-                value={openaiKey}
-                onChange={(e) => {
-                  setOpenaiKey(e.target.value);
-                  validateOpenAI(e.target.value);
-                }}
-              />
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                <span>Get your API key from</span>
-                <a 
-                  href="https://platform.openai.com/api-keys" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="text-primary hover:underline inline-flex items-center gap-0.5"
-                >
-                  OpenAI
-                  <ExternalLink size={12} />
-                </a>
-              </div>
+          <div className="bg-yellow-50 dark:bg-yellow-900/30 p-3 rounded-md flex items-start gap-2">
+            <AlertCircle size={20} className="text-yellow-500 mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-yellow-800 dark:text-yellow-200">
+              <p className="font-medium mb-1">Legal Disclaimer for India</p>
+              <p>This tool is provided for informational purposes only and does not constitute legal, financial, or professional advice. The accuracy of fact-checking results may vary. Users in India should verify information through official government sources where applicable.</p>
+              <p className="mt-1">Usage complies with the Information Technology Act, 2000 and the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021.</p>
             </div>
-          </TabsContent>
-        </Tabs>
-        
-        <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-md flex items-start gap-2">
-          <Info size={20} className="text-blue-500 mt-0.5 flex-shrink-0" />
-          <div className="text-sm text-blue-800 dark:text-blue-200">
-            Your API keys are stored locally in your browser and never transmitted to our servers. They're used only to make direct API calls from your browser.
           </div>
         </div>
         
@@ -226,10 +148,10 @@ const ApiKeyModal = () => {
           )}
           <Button 
             onClick={handleSave} 
-            disabled={!isOpenAIValid && !isPerplexityValid && !isOpenRouterValid}
-            className={`sm:w-auto w-full ${(!isOpenAIValid && !isPerplexityValid && !isOpenRouterValid) ? 'opacity-50 cursor-not-allowed' : 'button-glow'}`}
+            disabled={!useDefaultApiKey && !isOpenRouterValid}
+            className={`sm:w-auto w-full button-glow`}
           >
-            Save Keys
+            {useDefaultApiKey ? 'Continue with Built-in Key' : 'Save API Key'}
           </Button>
         </DialogFooter>
       </DialogContent>

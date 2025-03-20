@@ -53,26 +53,13 @@ export const apiKeyStorage: ApiKeyStorage = {
   }
 };
 
-export const validateApiKey = (key: string, type: 'openai' | 'google' | 'newsapi' | 'perplexity' | 'openrouter'): boolean => {
+export const validateApiKey = (key: string, type: 'openrouter'): boolean => {
   if (!key || key.trim() === '') {
     return false;
   }
   
   // Basic validation based on key patterns
-  switch (type) {
-    case 'openai':
-      return key.startsWith('sk-') && key.length > 20;
-    case 'perplexity':
-      return key.startsWith('pplx-') && key.length > 20;
-    case 'openrouter':
-      return key.length > 20; // OpenRouter keys are long alphanumeric strings
-    case 'google':
-      return key.length > 20;
-    case 'newsapi':
-      return key.length > 10;
-    default:
-      return false;
-  }
+  return key.length > 20; // OpenRouter keys are long alphanumeric strings
 };
 
 export const maskApiKey = (key: string): string => {
@@ -86,16 +73,21 @@ export const maskApiKey = (key: string): string => {
   return `${firstFour}••••••••${lastFour}`;
 };
 
+// Default OpenRouter API key (provided by the application)
+export const DEFAULT_OPENROUTER_API_KEY = "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";
+
 // OpenRouter models configuration
 export const openRouterModels = {
   deepseek: {
     id: "deepseek/deepseek-r1:free",
     name: "DeepSeek R1",
-    description: "Free open-source model with 671B parameters"
+    description: "Free open-source model with 671B parameters",
+    icon: "🧠"
   },
   gemini: {
     id: "google/gemini-2.0-pro-exp-02-05:free",
     name: "Google Gemini Pro 2.0",
-    description: "Free experimental model with 2M context window"
+    description: "Free experimental model with 2M context window",
+    icon: "🔍"
   }
 };

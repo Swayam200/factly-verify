@@ -1,17 +1,44 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useFactCheck } from '@/context/FactCheckContext';
 import VerificationBadge from './VerificationBadge';
 import SourcesList from './SourcesList';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bookmark, Share2, Clock, ArrowRight } from 'lucide-react';
+import { Bookmark, Share2, Clock, ArrowRight, LinkIcon, ExternalLink, ImageIcon, Copy } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+
+// Helper function to extract domain from URL
+const extractDomain = (url: string): string => {
+  try {
+    const domain = new URL(url).hostname;
+    return domain.replace('www.', '');
+  } catch (e) {
+    return url;
+  }
+};
+
+// Image placeholder for sources
+const fetchImageForSource = async (source: { url: string; title: string; imageUrl?: string }) => {
+  if (source.imageUrl) return source.imageUrl;
+  
+  try {
+    // Extract domain name for the source
+    const domain = extractDomain(source.url);
+    // Use a favicon service to get a placeholder icon
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+  } catch (error) {
+    console.error('Error generating image for source:', error);
+    return '/placeholder.svg';
+  }
+};
 
 const ResultCard: React.FC = () => {
   const { currentResult, currentQuery, isLoading, setCurrentQuery, setCurrentResult } = useFactCheck();
   const [showAnimation, setShowAnimation] = useState(false);
+  const [sourcesWithImages, setSourcesWithImages] = useState<any[]>([]);
   
   // Reset animation when result changes
   useEffect(() => {
@@ -25,10 +52,61 @@ const ResultCard: React.FC = () => {
     }
   }, [currentResult]);
   
+  // Process sources to add images
+  useEffect(() => {
+    if (currentResult?.sources) {
+      Promise.all(
+        currentResult.sources.map(async (source) => ({
+          ...source,
+          imageUrl: await fetchImageForSource(source)
+        }))
+      ).then(sourcesWithImages => {
+        setSourcesWithImages(sourcesWithImages);
+      });
+    }
+  }, [currentResult]);
+  
   // Handle new check button
   const handleNewCheck = () => {
     setCurrentQuery('');
     setCurrentResult(null);
+  };
+  
+  // Share functionality
+  const handleShare = () => {
+    if (!currentResult) return;
+    
+    const shareText = `Fact Check: "${currentResult.query}" - ${
+      currentResult.status === 'true' ? 'TRUE' : 
+      currentResult.status === 'false' ? 'FALSE' : 
+      currentResult.status === 'neutral' ? 'NEUTRAL' : 'UNCERTAIN'
+    } with ${Math.round(currentResult.confidenceScore * 100)}% confidence. 
+    
+${currentResult.explanation}
+
+Shared from Real or Fake - AI Fact Checker`;
+
+    if (navigator.share) {
+      navigator.share({
+        title: 'Fact Check Result',
+        text: shareText
+      }).catch(err => {
+        console.error('Error sharing:', err);
+        copyToClipboard(shareText);
+      });
+    } else {
+      copyToClipboard(shareText);
+    }
+  };
+  
+  // Copy to clipboard
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      toast.success('Copied to clipboard');
+    }).catch(err => {
+      console.error('Failed to copy:', err);
+      toast.error('Failed to copy to clipboard');
+    });
   };
   
   // Loading state
@@ -54,23 +132,7 @@ const ResultCard: React.FC = () => {
   
   // No result but query is being processed
   if (!currentResult && currentQuery) {
-    return (
-      <Card className="w-full max-w-3xl mx-auto mt-8 glass-panel">
-        <CardHeader className="text-center">
-          <CardTitle>Processing request...</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-40">
-            <div className="relative h-24 w-24">
-              <div className="absolute inset-0 rounded-full border-4 border-primary/30 border-t-primary animate-spin"></div>
-            </div>
-          </div>
-          <p className="text-center text-muted-foreground mt-4">
-            Analyzing: "{currentQuery}"
-          </p>
-        </CardContent>
-      </Card>
-    );
+    return null; // Using the LoadingScreen component instead
   }
   
   // Result is available
@@ -124,16 +186,59 @@ const ResultCard: React.FC = () => {
           
           <Separator />
           
-          <SourcesList sources={sources} />
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Sources</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {sourcesWithImages.map((source, index) => (
+                <a 
+                  key={index}
+                  href={source.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex gap-3 p-3 rounded-lg border border-border hover:bg-secondary/50 transition-colors group hover-lift"
+                >
+                  <div className="source-image flex-shrink-0">
+                    {source.imageUrl ? (
+                      <img src={source.imageUrl} alt={source.title} className="h-full w-full object-cover" onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/placeholder.svg';
+                      }} />
+                    ) : (
+                      <div className="flex items-center justify-center h-full w-full bg-muted">
+                        <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors">{source.title}</h4>
+                    <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                      <LinkIcon size={12} />
+                      <span className="truncate">{extractDomain(source.url)}</span>
+                      <ExternalLink size={12} className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
         </CardContent>
         
         <CardFooter className="flex justify-between py-4">
-          <Button variant="outline" size="sm" className="gap-1.5">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="gap-1.5 hover-lift"
+            onClick={() => toast.info("Bookmarking coming soon")}
+          >
             <Bookmark size={16} />
             <span className="hidden sm:inline">Save</span>
           </Button>
           
-          <Button variant="outline" size="sm" className="gap-1.5">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="gap-1.5 hover-lift"
+            onClick={handleShare}
+          >
             <Share2 size={16} />
             <span className="hidden sm:inline">Share</span>
           </Button>
@@ -141,7 +246,7 @@ const ResultCard: React.FC = () => {
           <Button 
             variant="default" 
             size="sm" 
-            className="gap-1.5 ml-auto"
+            className="gap-1.5 ml-auto button-glow"
             onClick={handleNewCheck}
           >
             <span>New Check</span>

@@ -5,10 +5,11 @@ import FactCheckInput from '@/components/FactCheckInput';
 import ResultCard from '@/components/ResultCard';
 import ApiKeyModal from '@/components/ApiKeyModal';
 import { useFactCheck } from '@/context/FactCheckContext';
-import { Shield, AlertTriangle, Info, Moon, Sun } from 'lucide-react';
+import { Shield, AlertTriangle, Info, Moon, Sun, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { openRouterModels } from '@/utils/apiManager';
+import LoadingScreen from '@/components/LoadingScreen';
 
 const Index = () => {
   const { 
@@ -18,29 +19,33 @@ const Index = () => {
     currentResult, 
     selectedModel,
     isDarkMode,
-    toggleDarkMode 
+    toggleDarkMode,
+    isLoading,
+    currentQuery
   } = useFactCheck();
   
   return (
     <div className="min-h-screen flex flex-col transition-colors duration-300">
+      {isLoading && <LoadingScreen query={currentQuery} />}
+      
       <NavBar />
       
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 py-8 space-y-12">
-        <header className="text-center space-y-4">
+        <header className="text-center space-y-4 animate-fade-slide-up">
           <div className="flex justify-center">
-            <div className="p-3 bg-primary/10 rounded-full">
+            <div className="p-3 bg-primary/10 rounded-full animate-pulse-ring">
               <Shield className="h-12 w-12 text-primary" />
             </div>
           </div>
           
           <div className="flex items-center justify-center gap-2">
-            <h1 className="text-4xl font-bold tracking-tight">
+            <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/70 text-transparent bg-clip-text">
               Real or Fake?
             </h1>
             <Button 
               variant="ghost" 
               size="icon" 
-              className="rounded-full" 
+              className="rounded-full hover-lift" 
               onClick={toggleDarkMode}
               title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
             >
@@ -53,28 +58,28 @@ const Index = () => {
             AI-powered fact-checking technology.
           </p>
           
-          <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 max-w-xl mx-auto mt-2">
+          <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 max-w-xl mx-auto mt-2 hover-lift">
             <div className="flex items-start gap-3">
               <Info className="text-blue-500 h-5 w-5 mt-0.5 flex-shrink-0" />
               <div className="text-blue-800 dark:text-blue-200 text-sm text-left">
                 <p className="font-medium mb-1">Currently using: {selectedModel === openRouterModels.deepseek.id ? 'DeepSeek R1' : 'Google Gemini Pro 2.0'}</p>
-                <p>Use the dropdown below to switch between free AI models for fact-checking.</p>
+                <p>Use the dropdown below to switch between AI models for fact-checking.</p>
               </div>
             </div>
           </div>
           
           {!hasRequiredKeys && !isModalOpen && (
-            <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 max-w-xl mx-auto mt-4">
+            <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 max-w-xl mx-auto mt-4 animate-fade-in">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="text-yellow-500 h-5 w-5 mt-0.5 flex-shrink-0" />
                 <div className="space-y-2">
                   <p className="text-yellow-800 dark:text-yellow-200 text-sm">
-                    API key required. Please configure your OpenRouter API key to enable fact-checking functionality.
+                    API key required. Continue with our built-in API key or configure your own.
                   </p>
                   <Button 
                     size="sm" 
                     variant="outline" 
-                    className="bg-yellow-100 dark:bg-yellow-900 border-yellow-300 dark:border-yellow-700"
+                    className="bg-yellow-100 dark:bg-yellow-900 border-yellow-300 dark:border-yellow-700 hover-lift"
                     onClick={() => setIsModalOpen(true)}
                   >
                     Configure API Key
@@ -100,11 +105,23 @@ const Index = () => {
       </main>
       
       <footer className="py-6 mt-auto border-t border-border">
-        <div className="text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Real or Fake - AI-Powered Fact Checking</p>
-          <p className="mt-1">
-            Powered by free AI models via <a href="https://openrouter.ai" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">OpenRouter</a>
-          </p>
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="text-sm text-muted-foreground order-2 sm:order-1">
+              <p>&copy; {new Date().getFullYear()} Real or Fake - AI-Powered Fact Checking</p>
+              <p className="mt-1">
+                Powered by free AI models via <a href="https://openrouter.ai" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">OpenRouter</a>
+              </p>
+            </div>
+            
+            <div className="order-1 sm:order-2">
+              <div className="text-sm text-muted-foreground">
+                <p className="font-medium mb-1">Legal Information</p>
+                <p>This tool is for informational purposes only. Results should be independently verified.</p>
+                <p>For Indian users: Complies with IT Act, 2000 and IT Rules, 2021.</p>
+              </div>
+            </div>
+          </div>
         </div>
       </footer>
     </div>

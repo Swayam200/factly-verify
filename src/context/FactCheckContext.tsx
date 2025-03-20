@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { openRouterModels } from '@/utils/apiManager';
+import { openRouterModels, DEFAULT_OPENROUTER_API_KEY, apiKeyStorage } from '@/utils/apiManager';
+import { toast } from 'sonner';
 
 export type ResultStatus = 'true' | 'false' | 'neutral' | 'unknown';
 
@@ -9,6 +10,7 @@ export interface Source {
   title: string;
   snippet?: string;
   reliability?: number;
+  imageUrl?: string;
 }
 
 export interface FactCheckResult {
@@ -22,10 +24,6 @@ export interface FactCheckResult {
 }
 
 interface ApiKeys {
-  openai?: string;
-  google?: string;
-  newsapi?: string;
-  perplexity?: string;
   openrouter?: string;
 }
 
@@ -47,6 +45,8 @@ interface FactCheckContextType {
   setSelectedModel: (modelId: string) => void;
   isDarkMode: boolean;
   toggleDarkMode: () => void;
+  useDefaultApiKey: boolean;
+  setUseDefaultApiKey: (useDefault: boolean) => void;
 }
 
 const defaultContextValue: FactCheckContextType = {
@@ -67,6 +67,8 @@ const defaultContextValue: FactCheckContextType = {
   setSelectedModel: () => {},
   isDarkMode: false,
   toggleDarkMode: () => {},
+  useDefaultApiKey: true,
+  setUseDefaultApiKey: () => {},
 };
 
 const FactCheckContext = createContext<FactCheckContextType>(defaultContextValue);
@@ -86,6 +88,7 @@ export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState(openRouterModels.deepseek.id);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [useDefaultApiKey, setUseDefaultApiKey] = useState(true);
 
   // Initialize dark mode from localStorage or system preference
   useEffect(() => {
@@ -125,6 +128,7 @@ export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }
     const savedHistory = localStorage.getItem('factcheckHistory');
     const savedApiKeys = localStorage.getItem('factcheckApiKeys');
     const savedModel = localStorage.getItem('factcheck_selected_model');
+    const savedUseDefaultKey = localStorage.getItem('factcheck_use_default_key');
     
     if (savedHistory) {
       try {
@@ -140,12 +144,14 @@ export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }
       } catch (error) {
         console.error('Error parsing saved API keys:', error);
       }
-    } else {
-      setIsModalOpen(true);
     }
     
     if (savedModel) {
       setSelectedModel(savedModel);
+    }
+
+    if (savedUseDefaultKey) {
+      setUseDefaultApiKey(savedUseDefaultKey === 'true');
     }
   }, []);
   
@@ -160,6 +166,10 @@ export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }
   useEffect(() => {
     localStorage.setItem('factcheck_selected_model', selectedModel);
   }, [selectedModel]);
+
+  useEffect(() => {
+    localStorage.setItem('factcheck_use_default_key', String(useDefaultApiKey));
+  }, [useDefaultApiKey]);
 
   const addToHistory = (result: FactCheckResult) => {
     setResultsHistory(prev => {
@@ -177,9 +187,15 @@ export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }
       ...prev,
       [key]: value
     }));
+    
+    if (key === 'openrouter' && value) {
+      toast.success('OpenRouter API key saved');
+      setUseDefaultApiKey(false);
+    }
   };
 
-  const hasRequiredKeys = Boolean(apiKeys.openrouter || apiKeys.perplexity || apiKeys.openai);
+  // Consider user has required keys if they're using the default key or have their own
+  const hasRequiredKeys = useDefaultApiKey || Boolean(apiKeys.openrouter);
 
   return (
     <FactCheckContext.Provider
@@ -207,6 +223,8 @@ export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }
         setSelectedModel,
         isDarkMode,
         toggleDarkMode,
+        useDefaultApiKey,
+        setUseDefaultApiKey,
       }}
     >
       {children}
