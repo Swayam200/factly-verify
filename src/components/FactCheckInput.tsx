@@ -136,7 +136,7 @@ const FactCheckInput: React.FC = () => {
               <SelectTrigger className="w-full sm:w-[280px] glass-input">
                 <SelectValue placeholder="Select Model" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-w-[300px]">
                 <SelectItem value={openRouterModels.deepseek.id} className="py-3">
                   <div className="flex items-center gap-2">
                     <div className="text-2xl">{openRouterModels.deepseek.icon}</div>
@@ -151,7 +151,7 @@ const FactCheckInput: React.FC = () => {
                     <div className="text-2xl">{openRouterModels.gemini.icon}</div>
                     <div className="flex flex-col">
                       <span className="font-medium">{openRouterModels.gemini.name}</span>
-                      <span className="text-xs text-muted-foreground truncate max-w-[200px]">{openRouterModels.gemini.description}</span>
+                      <span className="text-xs text-muted-foreground">{openRouterModels.gemini.description}</span>
                     </div>
                   </div>
                 </SelectItem>

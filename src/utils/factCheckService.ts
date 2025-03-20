@@ -44,6 +44,44 @@ const formatSources = (sources: any[]): Source[] => {
   }));
 };
 
+// Rate limiter implementation
+const rateLimiter = {
+  // Store timestamps of requests
+  requests: [] as number[],
+  // Maximum requests allowed in the time window
+  maxRequests: 10,
+  // Time window in milliseconds (30 seconds)
+  timeWindow: 30000,
+  
+  // Check if a new request is allowed
+  isAllowed: function(): boolean {
+    const now = Date.now();
+    // Remove timestamps outside the time window
+    this.requests = this.requests.filter(time => time > now - this.timeWindow);
+    
+    // If we haven't hit the limit, allow the request
+    if (this.requests.length < this.maxRequests) {
+      this.requests.push(now);
+      return true;
+    }
+    
+    return false;
+  },
+  
+  // Get remaining time until next available request slot
+  getWaitTime: function(): number {
+    const now = Date.now();
+    if (this.requests.length === 0) return 0;
+    
+    // Sort requests by timestamp (oldest first)
+    const sortedRequests = [...this.requests].sort((a, b) => a - b);
+    // When the oldest request will expire
+    const oldestExpiry = sortedRequests[0] + this.timeWindow;
+    
+    return Math.max(0, oldestExpiry - now);
+  }
+};
+
 // Verify fact with OpenRouter API (using specified model)
 export const verifyFactWithOpenRouter = async (
   query: string, 
@@ -51,6 +89,12 @@ export const verifyFactWithOpenRouter = async (
   modelId: string = openRouterModels.deepseek.id
 ): Promise<FactCheckResult> => {
   try {
+    // Check rate limiting
+    if (!rateLimiter.isAllowed()) {
+      const waitTime = Math.ceil(rateLimiter.getWaitTime() / 1000);
+      throw new Error(`Rate limit exceeded. Please try again in ${waitTime} seconds.`);
+    }
+    
     console.log(`Verifying fact with OpenRouter API using model: ${modelId}...`);
     
     const url = 'https://openrouter.ai/api/v1/chat/completions';
@@ -65,6 +109,9 @@ export const verifyFactWithOpenRouter = async (
     - sources: An array of sources with "url", "title", "snippet", and "reliability" (0-1 number) fields
     
     DO NOT include any text before or after the JSON.
+    DO NOT use markdown code blocks.
+    DO NOT break or truncate your response.
+    ENSURE your response is a complete, valid JSON object.
     `;
     
     const response = await fetch(url, {
@@ -87,8 +134,8 @@ export const verifyFactWithOpenRouter = async (
             content: `Fact check the following claim: "${query}"`
           }
         ],
-        temperature: 0.2,
-        max_tokens: 1500
+        temperature: 0.1, // Lower temperature for more consistent responses
+        max_tokens: 2000  // Increased max tokens to ensure complete responses
       }),
     });
     
@@ -106,26 +153,37 @@ export const verifyFactWithOpenRouter = async (
     
     let analysis;
     try {
-      // Try to extract JSON if wrapped in code blocks or has explanatory text
+      // Enhanced JSON extraction with better error handling
+      let jsonContent = content;
+      
+      // Remove any markdown code blocks if present
       const jsonMatch = content.match(/```(?:json)?([\s\S]*?)```/) || content.match(/({[\s\S]*})/);
-      const jsonContent = jsonMatch ? jsonMatch[1] : content;
+      if (jsonMatch) {
+        jsonContent = jsonMatch[1].trim();
+      }
+      
+      // Handle incomplete JSON by attempting to complete it
+      if (jsonContent.includes('{') && !jsonContent.includes('}')) {
+        console.warn("Incomplete JSON detected, attempting to fix");
+        // Basic attempt to complete the JSON
+        jsonContent += '}}';
+      }
+      
       analysis = JSON.parse(jsonContent);
     } catch (e) {
       console.error("Failed to parse JSON from OpenRouter response:", e);
-      console.log("Attempting to extract structured information from response...");
+      console.log("Falling back to text extraction");
       
-      // Fallback: Try to extract structured information from text
-      const status = content.toLowerCase().includes('false') ? 'false' : 
-                    content.toLowerCase().includes('true') ? 'true' : 'unknown';
+      // More robust fallback for non-JSON responses
+      const verdictMatch = content.match(/verdict\s*:\s*["']?([^"',}]+)["']?/i);
+      const confidenceMatch = content.match(/confidence\s*:\s*([0-9.]+)/i);
+      const explanationMatch = content.match(/explanation\s*:\s*["']?([^"']+)["']?/i);
       
-      return {
-        id: generateId(),
-        query,
-        status: status as ResultStatus,
-        confidenceScore: 0.6,
-        explanation: content.substring(0, 500),
-        sources: [],
-        timestamp: new Date().toISOString()
+      analysis = {
+        verdict: verdictMatch ? verdictMatch[1].trim() : "Unknown",
+        confidence: confidenceMatch ? parseFloat(confidenceMatch[1]) : 0.5,
+        explanation: explanationMatch ? explanationMatch[1].trim() : content.substring(0, 500),
+        sources: []
       };
     }
     
@@ -153,10 +211,6 @@ export const verifyFactWithOpenRouter = async (
 export const verifyFact = async (
   query: string,
   apiKeys: {
-    openai?: string;
-    google?: string;
-    newsapi?: string;
-    perplexity?: string;
     openrouter?: string;
   },
   modelPreference?: string
@@ -166,30 +220,14 @@ export const verifyFact = async (
       throw new Error('Please enter a claim to verify');
     }
     
-    // Try with OpenRouter API first (since it has free models)
+    // Try with OpenRouter API
     if (apiKeys.openrouter) {
       // Use specified model or default to DeepSeek
       const modelId = modelPreference || openRouterModels.deepseek.id;
       return await verifyFactWithOpenRouter(query, apiKeys.openrouter, modelId);
     }
     
-    // Try with Perplexity API second
-    if (apiKeys.perplexity) {
-      return await verifyFactWithPerplexity(query, apiKeys.perplexity);
-    }
-    
-    // If no OpenRouter or Perplexity API key, try OpenAI
-    if (apiKeys.openai) {
-      try {
-        const result = await verifyFactWithOpenAI(query, apiKeys.openai);
-        return result;
-      } catch (error) {
-        console.error('Error with OpenAI, fallback to simple response:', error);
-        throw error;
-      }
-    }
-    
-    throw new Error('No API keys available. Please add either an OpenRouter, Perplexity, or OpenAI API key.');
+    throw new Error('No API key available. Please try again later.');
     
   } catch (error) {
     console.error('Error verifying fact:', error);
@@ -204,211 +242,5 @@ export const verifyFact = async (
       sources: [],
       timestamp: new Date().toISOString()
     };
-  }
-};
-
-// Keep the original Perplexity and OpenAI functions
-export const verifyFactWithPerplexity = async (
-  query: string, 
-  apiKey: string
-): Promise<FactCheckResult> => {
-  try {
-    console.log("Verifying fact with Perplexity API...");
-    
-    const url = 'https://api.perplexity.ai/chat/completions';
-    
-    const systemPrompt = `
-    You are a factual analysis assistant that evaluates claims for truthfulness.
-    
-    Analyze the claim provided and return ONLY a valid JSON object with these fields:
-    - verdict: "True", "False", "Partially True", or "Unknown"
-    - confidence: A number between 0 and 1 indicating your confidence
-    - explanation: A detailed explanation of why the claim is true or false
-    - sources: An array of sources with "url", "title", "snippet", and "reliability" (0-1 number) fields
-    
-    DO NOT include any text before or after the JSON.
-    `;
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama-3.1-sonar-small-128k-online',
-        messages: [
-          {
-            role: 'system',
-            content: systemPrompt
-          },
-          {
-            role: 'user',
-            content: `Fact check the following claim: "${query}"`
-          }
-        ],
-        temperature: 0.2,
-        max_tokens: 1000,
-        return_related_questions: false,
-      }),
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Perplexity API error:', errorData);
-      throw new Error(`Perplexity API error: ${errorData.error?.message || response.statusText}`);
-    }
-    
-    const data = await response.json();
-    
-    // Extract and parse the JSON response from the message content
-    const content = data.choices[0]?.message?.content || '';
-    console.log("Perplexity raw response:", content);
-    
-    let analysis;
-    try {
-      // Try to extract JSON if wrapped in code blocks or has explanatory text
-      const jsonMatch = content.match(/```(?:json)?([\s\S]*?)```/) || content.match(/({[\s\S]*})/);
-      const jsonContent = jsonMatch ? jsonMatch[1] : content;
-      analysis = JSON.parse(jsonContent);
-    } catch (e) {
-      console.error("Failed to parse JSON from Perplexity response:", e);
-      console.log("Attempting to extract structured information from response...");
-      
-      // Fallback: Try to extract structured information from text
-      const status = content.toLowerCase().includes('false') ? 'false' : 
-                    content.toLowerCase().includes('true') ? 'true' : 'unknown';
-      
-      return {
-        id: generateId(),
-        query,
-        status: status as ResultStatus,
-        confidenceScore: 0.6,
-        explanation: content.substring(0, 500),
-        sources: [],
-        timestamp: new Date().toISOString()
-      };
-    }
-    
-    // Process the analysis into our result format
-    const status = determineStatus(analysis);
-    const confidenceScore = determineConfidence(analysis);
-    const sources = formatSources(analysis.sources);
-    
-    return {
-      id: generateId(),
-      query,
-      status,
-      confidenceScore,
-      explanation: analysis.explanation || content.substring(0, 500),
-      sources,
-      timestamp: new Date().toISOString()
-    };
-  } catch (error) {
-    console.error('Error verifying fact with Perplexity:', error);
-    throw new Error(error instanceof Error ? error.message : 'Failed to verify fact. Please try again later.');
-  }
-};
-
-export const verifyFactWithOpenAI = async (
-  query: string, 
-  apiKey: string
-): Promise<FactCheckResult> => {
-  try {
-    console.log("Verifying fact with OpenAI API...");
-    
-    const url = 'https://api.openai.com/v1/chat/completions';
-    
-    const prompt = `
-    I need a detailed fact check of the following claim:
-    
-    Claim: "${query}"
-    
-    Please analyze this claim and respond in a structured JSON format with the following fields:
-    - verdict: "True", "False", "Partially True", or "Unknown"
-    - confidence: A number between 0 and 1 indicating confidence in the verdict
-    - explanation: A detailed explanation justifying the verdict
-    - sources: An array of sources supporting the analysis, each with:
-      - url: URL of the source
-      - title: Title of the source
-      - snippet: Brief excerpt from the source that supports the analysis
-      - reliability: A number between 0 and 1 indicating source reliability
-    
-    Ensure the response is ONLY the requested JSON object with no preamble or additional text.
-    `;
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        temperature: 0.5,
-        max_tokens: 1024
-      })
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`);
-    }
-    
-    const data = await response.json();
-    
-    // Extract and parse the JSON response from the message content
-    const content = data.choices[0]?.message?.content || '';
-    console.log("OpenAI raw response:", content);
-    
-    let analysis;
-    try {
-      // Try to extract JSON if wrapped in code blocks or has explanatory text
-      const jsonMatch = content.match(/```(?:json)?([\s\S]*?)```/) || content.match(/({[\s\S]*})/);
-      const jsonContent = jsonMatch ? jsonMatch[1] : content;
-      analysis = JSON.parse(jsonContent);
-    } catch (e) {
-      console.error("Failed to parse JSON from OpenAI response:", e);
-      console.log("Attempting to extract structured information from response...");
-      
-      // Fallback: Try to extract structured information from text
-      const status = content.toLowerCase().includes('false') ? 'false' : 
-                    content.toLowerCase().includes('true') ? 'true' : 'unknown';
-      
-      return {
-        id: generateId(),
-        query,
-        status: status as ResultStatus,
-        confidenceScore: 0.6,
-        explanation: content.substring(0, 500),
-        sources: [],
-        timestamp: new Date().toISOString()
-      };
-    }
-    
-    // Process the analysis into our result format
-    const status = determineStatus(analysis);
-    const confidenceScore = determineConfidence(analysis);
-    const sources = formatSources(analysis.sources);
-    
-    return {
-      id: generateId(),
-      query,
-      status,
-      confidenceScore,
-      explanation: analysis.explanation || content.substring(0, 500),
-      sources,
-      timestamp: new Date().toISOString()
-    };
-  } catch (error) {
-    console.error('Error verifying fact with OpenAI:', error);
-    throw new Error(error instanceof Error ? error.message : 'Failed to verify fact. Please try again later.');
   }
 };
