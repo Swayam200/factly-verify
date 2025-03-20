@@ -26,6 +26,7 @@ const ApiKeyModal = () => {
   
   const [openrouterKey, setOpenrouterKey] = useState(apiKeys.openrouter || '');
   const [isOpenRouterValid, setIsOpenRouterValid] = useState(Boolean(apiKeys.openrouter));
+  const [showModelSelection, setShowModelSelection] = useState(false);
 
   const handleSave = () => {
     if (useDefaultApiKey) {
@@ -59,7 +60,7 @@ const ApiKeyModal = () => {
         <DialogHeader>
           <DialogTitle className="text-2xl font-semibold text-center">Settings</DialogTitle>
           <DialogDescription className="text-center">
-            Configure API keys and model preferences
+            Configure API keys and preferences
           </DialogDescription>
         </DialogHeader>
         
@@ -134,30 +135,42 @@ const ApiKeyModal = () => {
           <Separator />
           
           <div>
-            <h3 className="text-lg font-medium mb-3">AI Model Selection</h3>
-            <RadioGroup value={selectedModel} onValueChange={handleModelChange} className="space-y-3">
-              <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
-                <RadioGroupItem value={openRouterModels.deepseek.id} id="deepseek" />
-                <div className="flex items-start gap-2">
-                  <div className="text-2xl">{openRouterModels.deepseek.icon}</div>
-                  <div className="flex flex-col">
-                    <Label htmlFor="deepseek" className="font-medium cursor-pointer">{openRouterModels.deepseek.name}</Label>
-                    <span className="text-xs text-muted-foreground">{openRouterModels.deepseek.description}</span>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium mb-3">Advanced Settings</h3>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowModelSelection(!showModelSelection)}
+              >
+                {showModelSelection ? "Hide Models" : "Show Models"}
+              </Button>
+            </div>
+            
+            {showModelSelection && (
+              <RadioGroup value={selectedModel} onValueChange={handleModelChange} className="space-y-3">
+                <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                  <RadioGroupItem value={openRouterModels.deepseek.id} id="deepseek" />
+                  <div className="flex items-start gap-2">
+                    <div className="text-2xl">{openRouterModels.deepseek.icon}</div>
+                    <div className="flex flex-col">
+                      <Label htmlFor="deepseek" className="font-medium cursor-pointer">{openRouterModels.deepseek.name}</Label>
+                      <span className="text-xs text-muted-foreground">{openRouterModels.deepseek.description}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
-                <RadioGroupItem value={openRouterModels.gemini.id} id="gemini" />
-                <div className="flex items-start gap-2">
-                  <div className="text-2xl">{openRouterModels.gemini.icon}</div>
-                  <div className="flex flex-col">
-                    <Label htmlFor="gemini" className="font-medium cursor-pointer">{openRouterModels.gemini.name}</Label>
-                    <span className="text-xs text-muted-foreground">{openRouterModels.gemini.description}</span>
+                
+                <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                  <RadioGroupItem value={openRouterModels.gemini.id} id="gemini" />
+                  <div className="flex items-start gap-2">
+                    <div className="text-2xl">{openRouterModels.gemini.icon}</div>
+                    <div className="flex flex-col">
+                      <Label htmlFor="gemini" className="font-medium cursor-pointer">{openRouterModels.gemini.name}</Label>
+                      <span className="text-xs text-muted-foreground">{openRouterModels.gemini.description}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </RadioGroup>
+              </RadioGroup>
+            )}
           </div>
           
           <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-md flex items-start gap-2">

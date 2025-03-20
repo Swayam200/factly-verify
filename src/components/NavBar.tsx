@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Settings, History, Github, Info, Scale } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import ApiKeyModal from '@/components/ApiKeyModal';
 
 interface NavBarProps {
   className?: string;
@@ -62,7 +63,7 @@ const NavBar: React.FC<NavBarProps> = ({ className }) => {
         </Button>
         
         <a 
-          href="https://github.com" 
+          href="https://github.com/Swayam200" 
           target="_blank" 
           rel="noopener noreferrer"
           className="hidden sm:block"
@@ -72,6 +73,8 @@ const NavBar: React.FC<NavBarProps> = ({ className }) => {
           </Button>
         </a>
       </div>
+      
+      <ApiKeyModal />
     </nav>
   );
 };
