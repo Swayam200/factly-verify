@@ -6,14 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Search, Sparkles, Loader2 } from 'lucide-react';
 import { verifyFact } from '@/utils/factCheckService';
 import { toast } from 'sonner';
-import { openRouterModels, DEFAULT_OPENROUTER_API_KEY } from '@/utils/apiManager';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
+import { DEFAULT_OPENROUTER_API_KEY } from '@/utils/apiManager';
 
 const FactCheckInput: React.FC = () => {
   const { 
@@ -25,7 +18,6 @@ const FactCheckInput: React.FC = () => {
     setIsModalOpen,
     isLoading: contextLoading,
     selectedModel,
-    setSelectedModel,
     useDefaultApiKey
   } = useFactCheck();
   
@@ -83,18 +75,6 @@ const FactCheckInput: React.FC = () => {
   const handleSuggestedClaim = (claim: string) => {
     setQuery(claim);
   };
-  
-  const handleModelChange = (value: string) => {
-    setSelectedModel(value);
-    
-    const modelName = value === openRouterModels.deepseek.id 
-      ? 'DeepSeek R1' 
-      : 'Google Gemini Pro 2.0';
-      
-    toast.info(`Model changed to ${modelName}`, {
-      description: "Your next fact-check will use this model"
-    });
-  };
 
   return (
     <div className="w-full max-w-3xl mx-auto animate-fade-slide-up">
@@ -130,50 +110,20 @@ const FactCheckInput: React.FC = () => {
           </Button>
         </div>
         
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="w-full sm:w-auto">
-            <Select value={selectedModel} onValueChange={handleModelChange}>
-              <SelectTrigger className="w-full sm:w-[280px] glass-input">
-                <SelectValue placeholder="Select Model" />
-              </SelectTrigger>
-              <SelectContent className="max-w-[300px]">
-                <SelectItem value={openRouterModels.deepseek.id} className="py-3">
-                  <div className="flex items-center gap-2">
-                    <div className="text-2xl">{openRouterModels.deepseek.icon}</div>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{openRouterModels.deepseek.name}</span>
-                      <span className="text-xs text-muted-foreground">{openRouterModels.deepseek.description}</span>
-                    </div>
-                  </div>
-                </SelectItem>
-                <SelectItem value={openRouterModels.gemini.id} className="py-3">
-                  <div className="flex items-center gap-2">
-                    <div className="text-2xl">{openRouterModels.gemini.icon}</div>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{openRouterModels.gemini.name}</span>
-                      <span className="text-xs text-muted-foreground">{openRouterModels.gemini.description}</span>
-                    </div>
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
+        {!currentQuery && !isLoading && (
+          <div className="flex flex-wrap gap-2 justify-center">
+            {suggestedClaims.map((claim, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => handleSuggestedClaim(claim)}
+                className="text-sm px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors text-primary hover-lift"
+              >
+                {claim}
+              </button>
+            ))}
           </div>
-          
-          {!currentQuery && !isLoading && (
-            <div className="flex flex-wrap gap-2 justify-center sm:justify-end">
-              {suggestedClaims.map((claim, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => handleSuggestedClaim(claim)}
-                  className="text-sm px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors text-primary hover-lift"
-                >
-                  {claim}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        )}
       </form>
     </div>
   );
