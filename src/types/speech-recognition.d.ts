@@ -54,7 +54,7 @@ interface SpeechRecognition extends EventTarget {
 }
 
 interface SpeechRecognitionConstructor {
-  new (): SpeechRecognition;
+  new(): SpeechRecognition;
   prototype: SpeechRecognition;
 }
 
@@ -64,5 +64,3 @@ declare global {
     webkitSpeechRecognition: SpeechRecognitionConstructor;
   }
 }
-
-export {};
