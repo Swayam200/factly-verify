@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { CheckCircle, XCircle, AlertCircle, HelpCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertTriangle, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ResultStatus } from '@/context/FactCheckContext';
 
@@ -41,11 +41,11 @@ const VerificationBadge: React.FC<VerificationBadgeProps> = ({
     unknown: 'border-result-unknown bg-result-unknown/10 text-result-unknown'
   };
   
-  // Status-specific icons
+  // Status-specific icons with more aesthetic look
   const StatusIcon = {
-    true: CheckCircle,
+    true: CheckCircle2,
     false: XCircle,
-    neutral: AlertCircle,
+    neutral: AlertTriangle,
     unknown: HelpCircle
   }[status];
   
@@ -55,7 +55,7 @@ const VerificationBadge: React.FC<VerificationBadgeProps> = ({
   return (
     <div 
       className={cn(
-        'flex items-center justify-center rounded-full border-2 overflow-visible',
+        'flex items-center justify-center rounded-full border-2 overflow-visible shadow-md',
         statusClasses[status],
         sizeClasses[size],
         animate && 'animate-badge-pop',
@@ -63,7 +63,7 @@ const VerificationBadge: React.FC<VerificationBadgeProps> = ({
       )}
     >
       <div className="flex flex-col items-center justify-center">
-        <StatusIcon size={iconSize[size]} strokeWidth={2} className="overflow-visible" />
+        <StatusIcon size={iconSize[size]} strokeWidth={1.5} className="overflow-visible" />
         {size === 'lg' && (
           <span className="font-bold mt-0.5 text-xs">{confidencePercent}%</span>
         )}

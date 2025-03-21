@@ -1,14 +1,15 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useFactCheck } from '@/context/FactCheckContext';
 import VerificationBadge from './VerificationBadge';
-import SourcesList from './SourcesList';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bookmark, Share2, Clock, ArrowRight, LinkIcon, ExternalLink, ImageIcon, Copy } from 'lucide-react';
+import { Bookmark, Share2, Clock, ArrowRight, LinkIcon, ExternalLink, ImageIcon, Copy, Check, ChartBar } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import FeedbackButtons from './FeedbackButtons';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 // Helper function to extract domain from URL
 const extractDomain = (url: string): string => {
@@ -39,6 +40,7 @@ const ResultCard: React.FC = () => {
   const { currentResult, currentQuery, isLoading, setCurrentQuery, setCurrentResult } = useFactCheck();
   const [showAnimation, setShowAnimation] = useState(false);
   const [sourcesWithImages, setSourcesWithImages] = useState<any[]>([]);
+  const [isCopied, setIsCopied] = useState(false);
   
   // Reset animation when result changes
   useEffect(() => {
@@ -102,11 +104,32 @@ Shared from Real or Fake - AI Fact Checker`;
   // Copy to clipboard
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
+      setIsCopied(true);
       toast.success('Copied to clipboard');
+      
+      setTimeout(() => {
+        setIsCopied(false);
+      }, 2000);
     }).catch(err => {
       console.error('Failed to copy:', err);
       toast.error('Failed to copy to clipboard');
     });
+  };
+  
+  // Chart data for sources distribution
+  const getSourceDistributionData = () => {
+    if (!currentResult?.sources || currentResult.sources.length === 0) return [];
+    
+    const sourceTypes: Record<string, number> = {};
+    currentResult.sources.forEach(source => {
+      const domain = extractDomain(source.url);
+      sourceTypes[domain] = (sourceTypes[domain] || 0) + 1;
+    });
+    
+    return Object.entries(sourceTypes).map(([name, value]) => ({
+      name,
+      value
+    }));
   };
   
   // Loading state
@@ -140,6 +163,10 @@ Shared from Real or Fake - AI Fact Checker`;
     const { id, query, status, confidenceScore, explanation, sources, timestamp } = currentResult;
     const formattedDate = new Date(timestamp).toLocaleString();
     
+    // Chart data
+    const COLORS = ['#8B5CF6', '#06B6D4', '#10B981', '#F59E0B', '#EF4444'];
+    const sourceData = getSourceDistributionData();
+    
     return (
       <Card 
         className={cn(
@@ -164,7 +191,7 @@ Shared from Real or Fake - AI Fact Checker`;
               confidenceScore={confidenceScore} 
               size="lg" 
               animate={showAnimation}
-              className="glass-panel shadow-md border-2"
+              className="glass-panel shadow-lg border-2"
             />
           </div>
           
@@ -179,10 +206,41 @@ Shared from Real or Fake - AI Fact Checker`;
         </CardHeader>
         
         <CardContent className="space-y-6">
-          <div className="bg-secondary/50 dark:bg-secondary/30 backdrop-blur-xs rounded-lg p-4">
+          <div className="bg-secondary/50 dark:bg-secondary/30 backdrop-blur-xs rounded-lg p-4 shadow-sm">
             <h3 className="text-lg font-semibold mb-2">Analysis</h3>
             <p className="text-muted-foreground">{explanation}</p>
           </div>
+          
+          {sourceData.length > 0 && (
+            <div className="bg-secondary/30 rounded-lg p-4 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <ChartBar size={18} className="text-primary" />
+                <h3 className="text-lg font-semibold">Source Distribution</h3>
+              </div>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={sourceData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      paddingAngle={5}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {sourceData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => [`${value} sources`, 'Count']} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
           
           <Separator />
           
@@ -195,9 +253,9 @@ Shared from Real or Fake - AI Fact Checker`;
                   href={source.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex gap-3 p-3 rounded-lg border border-border hover:bg-secondary/50 transition-colors group hover-lift"
+                  className="flex gap-3 p-3 rounded-lg border border-border hover:bg-secondary/50 transition-colors group hover-lift shadow-sm"
                 >
-                  <div className="source-image flex-shrink-0">
+                  <div className="source-image flex-shrink-0 rounded-md overflow-hidden">
                     {source.imageUrl ? (
                       <img src={source.imageUrl} alt={source.title} className="h-full w-full object-cover" onError={(e) => {
                         (e.target as HTMLImageElement).src = '/placeholder.svg';
@@ -243,8 +301,8 @@ Shared from Real or Fake - AI Fact Checker`;
             className="gap-1.5 hover-lift"
             onClick={handleShare}
           >
-            <Share2 size={16} />
-            <span className="hidden sm:inline">Share</span>
+            {isCopied ? <Check size={16} className="text-green-500" /> : <Share2 size={16} />}
+            <span className="hidden sm:inline">{isCopied ? 'Copied' : 'Share'}</span>
           </Button>
           
           <Button 
