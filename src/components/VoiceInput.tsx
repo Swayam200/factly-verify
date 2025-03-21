@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Mic, MicOff, Loader2 } from 'lucide-react';
+import { Mic, MicOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface VoiceInputProps {
@@ -16,43 +16,42 @@ const VoiceInput: React.FC<VoiceInputProps> = ({ onResult, isDisabled = false })
   
   useEffect(() => {
     // Check if browser supports SpeechRecognition
-    if (!('SpeechRecognition' in window) && !('webkitSpeechRecognition' in window)) {
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognitionAPI) {
       setSupportsSpeech(false);
       console.log('Speech recognition not supported');
       return;
     }
     
     // Initialize speech recognition
-    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognitionAPI) {
-      recognitionRef.current = new SpeechRecognitionAPI();
+    recognitionRef.current = new SpeechRecognitionAPI();
+    
+    recognitionRef.current.continuous = false;
+    recognitionRef.current.interimResults = true;
+    recognitionRef.current.lang = 'en-US';
+    
+    recognitionRef.current.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map(result => result[0].transcript)
+        .join('');
       
-      recognitionRef.current.continuous = false;
-      recognitionRef.current.interimResults = true;
-      recognitionRef.current.lang = 'en-US';
-      
-      recognitionRef.current.onresult = (event) => {
-        const transcript = Array.from(event.results)
-          .map(result => result[0].transcript)
-          .join('');
-        
-        // Only send final results
-        if (event.results[0].isFinal) {
-          onResult(transcript);
-          stopListening();
-        }
-      };
-      
-      recognitionRef.current.onerror = (event) => {
-        console.error('Speech recognition error', event.error);
-        toast.error('Speech recognition error: ' + event.error);
+      // Only send final results
+      if (event.results[0].isFinal) {
+        onResult(transcript);
         stopListening();
-      };
-      
-      recognitionRef.current.onend = () => {
-        setIsListening(false);
-      };
-    }
+      }
+    };
+    
+    recognitionRef.current.onerror = (event) => {
+      console.error('Speech recognition error', event.error);
+      toast.error('Speech recognition error: ' + event.error);
+      stopListening();
+    };
+    
+    recognitionRef.current.onend = () => {
+      setIsListening(false);
+    };
     
     return () => {
       if (recognitionRef.current) {
