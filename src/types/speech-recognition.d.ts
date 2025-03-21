@@ -64,3 +64,6 @@ declare global {
     webkitSpeechRecognition: SpeechRecognitionConstructor;
   }
 }
+
+// This export is needed to ensure this file is treated as a module
+export {};
