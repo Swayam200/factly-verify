@@ -64,3 +64,5 @@ declare global {
     webkitSpeechRecognition: SpeechRecognitionConstructor;
   }
 }
+
+export {};

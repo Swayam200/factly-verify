@@ -23,34 +23,36 @@ const VoiceInput: React.FC<VoiceInputProps> = ({ onResult, isDisabled = false })
     }
     
     // Initialize speech recognition
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    recognitionRef.current = new SpeechRecognition();
-    
-    recognitionRef.current.continuous = false;
-    recognitionRef.current.interimResults = true;
-    recognitionRef.current.lang = 'en-US';
-    
-    recognitionRef.current.onresult = (event) => {
-      const transcript = Array.from(event.results)
-        .map(result => result[0].transcript)
-        .join('');
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognitionAPI) {
+      recognitionRef.current = new SpeechRecognitionAPI();
       
-      // Only send final results
-      if (event.results[0].isFinal) {
-        onResult(transcript);
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = true;
+      recognitionRef.current.lang = 'en-US';
+      
+      recognitionRef.current.onresult = (event) => {
+        const transcript = Array.from(event.results)
+          .map(result => result[0].transcript)
+          .join('');
+        
+        // Only send final results
+        if (event.results[0].isFinal) {
+          onResult(transcript);
+          stopListening();
+        }
+      };
+      
+      recognitionRef.current.onerror = (event) => {
+        console.error('Speech recognition error', event.error);
+        toast.error('Speech recognition error: ' + event.error);
         stopListening();
-      }
-    };
-    
-    recognitionRef.current.onerror = (event) => {
-      console.error('Speech recognition error', event.error);
-      toast.error('Speech recognition error: ' + event.error);
-      stopListening();
-    };
-    
-    recognitionRef.current.onend = () => {
-      setIsListening(false);
-    };
+      };
+      
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
     
     return () => {
       if (recognitionRef.current) {
