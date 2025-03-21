@@ -7,6 +7,7 @@ import { Search, Sparkles, Loader2 } from 'lucide-react';
 import { verifyFact } from '@/utils/factCheckService';
 import { toast } from 'sonner';
 import { DEFAULT_OPENROUTER_API_KEY } from '@/utils/apiManager';
+import VoiceInput from './VoiceInput';
 
 const FactCheckInput: React.FC = () => {
   const { 
@@ -76,6 +77,11 @@ const FactCheckInput: React.FC = () => {
     setQuery(claim);
   };
 
+  const handleVoiceInput = (text: string) => {
+    setQuery(text);
+    toast.success('Voice input captured');
+  };
+
   return (
     <div className="w-full max-w-3xl mx-auto animate-fade-slide-up">
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -89,25 +95,32 @@ const FactCheckInput: React.FC = () => {
             placeholder="Enter a claim or statement to verify..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="pl-10 py-6 glass-input text-lg transition-all duration-300 focus:ring-4"
+            className="pl-10 pr-24 py-6 glass-input text-lg transition-all duration-300 focus:ring-4"
             disabled={isLoading || contextLoading}
           />
           
-          <Button
-            type="submit"
-            className="absolute right-2 top-2 transition-all button-glow"
-            size="sm"
-            disabled={isLoading || contextLoading || !query.trim()}
-          >
-            {isLoading || contextLoading ? (
-              <Loader2 className="animate-spin" size={18} />
-            ) : (
-              <>
-                <Sparkles size={18} className="mr-1" />
-                Verify
-              </>
-            )}
-          </Button>
+          <div className="absolute right-2 top-2 flex gap-1">
+            <VoiceInput 
+              onResult={handleVoiceInput} 
+              isDisabled={isLoading || contextLoading}
+            />
+            
+            <Button
+              type="submit"
+              className="transition-all button-glow"
+              size="sm"
+              disabled={isLoading || contextLoading || !query.trim()}
+            >
+              {isLoading || contextLoading ? (
+                <Loader2 className="animate-spin" size={18} />
+              ) : (
+                <>
+                  <Sparkles size={18} className="mr-1" />
+                  Verify
+                </>
+              )}
+            </Button>
+          </div>
         </div>
         
         {!currentQuery && !isLoading && (

@@ -1,82 +1,112 @@
 
-import React, { useState, useEffect } from 'react';
-import { Search, SparkleIcon } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Loader2, Search, BookOpen, CheckCircle2, XCircle } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface LoadingScreenProps {
-  query?: string;
+  query: string;
 }
 
 const LoadingScreen: React.FC<LoadingScreenProps> = ({ query }) => {
+  const [step, setStep] = useState(0);
   const [dots, setDots] = useState('');
-  const [randomFacts, setRandomFacts] = useState<string[]>([
-    "Fact checking uses multiple reliable sources",
-    "The Earth is approximately 4.54 billion years old",
-    "Chess was invented in India around the 6th century",
-    "Humans share 50% of their DNA with bananas",
-    "There are more possible iterations of a game of chess than atoms in the universe",
-    "The shortest war in history lasted 38 minutes",
-    "A day on Venus is longer than a year on Venus",
-    "The Great Wall of China is not visible from space with the naked eye",
-    "Honey never spoils - archaeologists have found edible honey in ancient tombs"
-  ]);
-  const [currentFact, setCurrentFact] = useState('');
-
-  // Loading animation for dots
+  
+  // Create loading animation for dots
   useEffect(() => {
-    const interval = setInterval(() => {
-      setDots(prev => prev.length >= 3 ? '' : prev + '.');
+    const dotInterval = setInterval(() => {
+      setDots(prev => prev.length < 3 ? prev + '.' : '');
     }, 500);
-    return () => clearInterval(interval);
+    
+    return () => clearInterval(dotInterval);
   }, []);
-
-  // Random fact rotation
+  
+  // Simulate the steps of fact checking
   useEffect(() => {
-    setCurrentFact(randomFacts[Math.floor(Math.random() * randomFacts.length)]);
+    const stepInterval = setInterval(() => {
+      setStep(prev => (prev < 3 ? prev + 1 : prev));
+    }, 2000);
     
-    const interval = setInterval(() => {
-      setCurrentFact(prev => {
-        const filteredFacts = randomFacts.filter(fact => fact !== prev);
-        return filteredFacts[Math.floor(Math.random() * filteredFacts.length)];
-      });
-    }, 5000);
-    
-    return () => clearInterval(interval);
+    return () => clearInterval(stepInterval);
   }, []);
-
+  
+  const steps = [
+    {
+      icon: <Search className="h-6 w-6 text-blue-500 animate-pulse" />,
+      text: 'Searching for relevant information',
+      subtext: 'Finding sources and references',
+    },
+    {
+      icon: <BookOpen className="h-6 w-6 text-amber-500 animate-pulse" />,
+      text: 'Analyzing sources and context',
+      subtext: 'Evaluating reliability and credibility',
+    },
+    {
+      icon: <Loader2 className="h-6 w-6 text-purple-500 animate-spin" />,
+      text: 'Processing claim verification',
+      subtext: 'Cross-referencing with verified facts',
+    },
+    {
+      icon: <CheckCircle2 className="h-6 w-6 text-green-500 animate-pulse" />,
+      text: 'Finalizing results',
+      subtext: 'Preparing the verification report',
+    },
+  ];
+  
   return (
-    <div className="loading-screen animate-fade-in">
-      <div className="flex flex-col items-center justify-center p-8 rounded-xl glass-panel max-w-2xl mx-auto">
-        <div className="loading-spinner">
-          <div className="loading-spinner-ring"></div>
-          <div className="loading-spinner-ring"></div>
-          <div className="loading-spinner-core">
-            <SparkleIcon className="h-6 w-6 text-primary animate-pulse" />
-          </div>
-        </div>
-        
-        <div className="loading-progress-bar">
-          <div className="loading-progress-value"></div>
-        </div>
-        
-        <p className="loading-screen-text mt-4 text-lg font-medium">
-          Verifying claim{dots}
-        </p>
-        
-        {query && (
-          <div className="mt-4 max-w-md text-center">
-            <div className="flex items-center gap-2 mb-2 justify-center text-sm text-muted-foreground">
-              <Search size={14} />
-              <span>Analyzing:</span>
+    <Card className="w-full max-w-3xl mx-auto mt-8 overflow-hidden glass-panel">
+      <CardContent className="p-6">
+        <div className="flex flex-col items-center justify-center space-y-8">
+          <div className="loading-icon">
+            <div className="relative h-20 w-20 flex items-center justify-center">
+              {/* Outer spinning ring */}
+              <div className="absolute inset-0 border-4 border-t-primary border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+              
+              {/* Middle pulsing ring */}
+              <div className="absolute inset-2 border-4 border-r-primary/70 border-t-transparent border-b-transparent border-l-transparent rounded-full animate-ping"></div>
+              
+              {/* Inner icon */}
+              <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
+                <Search className="h-6 w-6 text-primary" />
+              </div>
             </div>
-            <p className="text-foreground font-medium px-4 py-2 rounded-lg bg-background/50 backdrop-blur-sm border border-border/50 shadow-sm">"{query}"</p>
           </div>
-        )}
-        
-        <div className="mt-6 text-sm text-muted-foreground max-w-xs text-center animate-fade-in">
-          <p className="italic">{currentFact}</p>
+          
+          <div className="text-center space-y-2">
+            <h2 className="text-xl font-semibold">Fact Checking</h2>
+            <p className="text-muted-foreground max-w-md">
+              "{query}"
+            </p>
+          </div>
+          
+          <div className="w-full space-y-4">
+            {steps.map((item, index) => (
+              <div 
+                key={index} 
+                className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-300 ${
+                  step >= index ? 'bg-secondary/30' : 'opacity-50'
+                }`}
+              >
+                <div className="flex-shrink-0">
+                  {index === step ? item.icon : (
+                    step > index ? 
+                    <CheckCircle2 className="h-6 w-6 text-green-500" /> : 
+                    <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30" />
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium">
+                    {item.text}{index === step && dots}
+                  </p>
+                  {index === step && (
+                    <p className="text-xs text-muted-foreground">{item.subtext}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

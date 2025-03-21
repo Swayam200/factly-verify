@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useFactCheck } from '@/context/FactCheckContext';
 import VerificationBadge from './VerificationBadge';
@@ -9,6 +8,7 @@ import { Bookmark, Share2, Clock, ArrowRight, LinkIcon, ExternalLink, ImageIcon,
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import FeedbackButtons from './FeedbackButtons';
 
 // Helper function to extract domain from URL
 const extractDomain = (url: string): string => {
@@ -137,7 +137,7 @@ Shared from Real or Fake - AI Fact Checker`;
   
   // Result is available
   if (currentResult) {
-    const { query, status, confidenceScore, explanation, sources, timestamp } = currentResult;
+    const { id, query, status, confidenceScore, explanation, sources, timestamp } = currentResult;
     const formattedDate = new Date(timestamp).toLocaleString();
     
     return (
@@ -220,6 +220,10 @@ Shared from Real or Fake - AI Fact Checker`;
               ))}
             </div>
           </div>
+          
+          <Separator />
+          
+          <FeedbackButtons resultId={id} />
         </CardContent>
         
         <CardFooter className="flex justify-between py-4">
