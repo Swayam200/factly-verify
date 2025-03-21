@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import Legal from "./pages/Legal";
 import About from "./pages/About";
 import NavBar from "./components/NavBar";
+import ApiKeyModal from "./components/ApiKeyModal";
 import { Suspense, lazy } from "react";
 import { Skeleton } from "./components/ui/skeleton";
 
@@ -47,6 +48,7 @@ const App = () => {
           <BrowserRouter>
             <div className="flex flex-col min-h-screen">
               <NavBar />
+              <ApiKeyModal />
               <Suspense fallback={<LoadingFallback />}>
                 <main className="flex-1">
                   <Routes>
