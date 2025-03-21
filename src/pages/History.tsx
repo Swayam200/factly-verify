@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import NavBar from '@/components/NavBar';
 import { useFactCheck } from '@/context/FactCheckContext';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
@@ -32,110 +31,106 @@ const History = () => {
   }, {});
   
   return (
-    <div className="min-h-screen flex flex-col">
-      <NavBar />
-      
-      <main className="flex-1 w-full max-w-5xl mx-auto px-4 py-8">
-        <header className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Link to="/">
-              <Button variant="outline" size="icon" className="h-8 w-8">
-                <ArrowLeft size={16} />
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold">Fact Check History</h1>
+    <main className="flex-1 w-full max-w-5xl mx-auto px-4 py-8">
+      <header className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <Link to="/">
+            <Button variant="outline" size="icon" className="h-8 w-8">
+              <ArrowLeft size={16} />
+            </Button>
+          </Link>
+          <h1 className="text-2xl font-bold">Fact Check History</h1>
+        </div>
+        
+        <div className="flex gap-2">
+          <div className="relative flex-1 sm:w-64">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search history..."
+              className="pl-9 h-9"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
           
-          <div className="flex gap-2">
-            <div className="relative flex-1 sm:w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search history..."
-                className="pl-9 h-9"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+          {resultsHistory.length > 0 && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={() => setIsConfirmDialogOpen(true)}
+            >
+              <Trash2 size={16} className="mr-1" />
+              Clear
+            </Button>
+          )}
+        </div>
+      </header>
+      
+      {Object.keys(groupedHistory).length === 0 ? (
+        <div className="text-center py-16 space-y-4">
+          <div className="flex justify-center">
+            <div className="p-4 bg-muted rounded-full">
+              <HistoryIcon className="h-10 w-10 text-muted-foreground" />
             </div>
-            
-            {resultsHistory.length > 0 && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                onClick={() => setIsConfirmDialogOpen(true)}
-              >
-                <Trash2 size={16} className="mr-1" />
-                Clear
-              </Button>
-            )}
           </div>
-        </header>
-        
-        {Object.keys(groupedHistory).length === 0 ? (
-          <div className="text-center py-16 space-y-4">
-            <div className="flex justify-center">
-              <div className="p-4 bg-muted rounded-full">
-                <HistoryIcon className="h-10 w-10 text-muted-foreground" />
+          <h2 className="text-xl font-semibold">No history yet</h2>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            Your fact-checking history will appear here once you've verified some claims.
+          </p>
+          <Link to="/" className="inline-block mt-4">
+            <Button>Start fact-checking</Button>
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          {Object.entries(groupedHistory).map(([date, items]) => (
+            <div key={date} className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Clock size={16} className="text-muted-foreground" />
+                <h2 className="text-sm font-medium text-muted-foreground">{date}</h2>
               </div>
-            </div>
-            <h2 className="text-xl font-semibold">No history yet</h2>
-            <p className="text-muted-foreground max-w-md mx-auto">
-              Your fact-checking history will appear here once you've verified some claims.
-            </p>
-            <Link to="/" className="inline-block mt-4">
-              <Button>Start fact-checking</Button>
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {Object.entries(groupedHistory).map(([date, items]) => (
-              <div key={date} className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Clock size={16} className="text-muted-foreground" />
-                  <h2 className="text-sm font-medium text-muted-foreground">{date}</h2>
-                </div>
-                
-                <div className="space-y-3">
-                  {items.map((result) => (
-                    <Link 
-                      to={`/?id=${result.id}`} 
-                      key={result.id}
-                      className="block"
-                    >
-                      <div className={cn(
-                        "border rounded-lg p-4 transition-all hover:shadow-md hover:-translate-y-0.5",
-                        "bg-card/50 backdrop-blur-sm"
-                      )}>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-                          <div className="space-y-1 flex-1">
-                            <h3 className="font-medium line-clamp-1">{result.query}</h3>
-                            <p className="text-sm text-muted-foreground line-clamp-1">
-                              {result.explanation}
-                            </p>
-                          </div>
+              
+              <div className="space-y-3">
+                {items.map((result) => (
+                  <Link 
+                    to={`/?id=${result.id}`} 
+                    key={result.id}
+                    className="block"
+                  >
+                    <div className={cn(
+                      "border rounded-lg p-4 transition-all hover:shadow-md hover:-translate-y-0.5",
+                      "bg-card/50 backdrop-blur-sm"
+                    )}>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+                        <div className="space-y-1 flex-1">
+                          <h3 className="font-medium line-clamp-1">{result.query}</h3>
+                          <p className="text-sm text-muted-foreground line-clamp-1">
+                            {result.explanation}
+                          </p>
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                          <Badge variant="outline" className="text-xs">
+                            {new Date(result.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </Badge>
                           
-                          <div className="flex items-center gap-3">
-                            <Badge variant="outline" className="text-xs">
-                              {new Date(result.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </Badge>
-                            
-                            <VerificationBadge 
-                              status={result.status} 
-                              confidenceScore={result.confidenceScore}
-                              size="sm"
-                              showLabel={false}
-                            />
-                          </div>
+                          <VerificationBadge 
+                            status={result.status} 
+                            confidenceScore={result.confidenceScore}
+                            size="sm"
+                            showLabel={false}
+                          />
                         </div>
                       </div>
-                    </Link>
-                  ))}
-                </div>
+                    </div>
+                  </Link>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
-      </main>
+            </div>
+          ))}
+        </div>
+      )}
       
       <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
         <DialogContent>
@@ -161,7 +156,7 @@ const History = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </main>
   );
 };
 

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Loader2, Search, SparkleIcon } from 'lucide-react';
+import { Search, SparkleIcon } from 'lucide-react';
 
 interface LoadingScreenProps {
   query?: string;
@@ -45,13 +45,17 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ query }) => {
 
   return (
     <div className="loading-screen animate-fade-in">
-      <div className="flex flex-col items-center justify-center p-8 rounded-xl glass-panel">
+      <div className="flex flex-col items-center justify-center p-8 rounded-xl glass-panel max-w-2xl mx-auto">
         <div className="loading-spinner">
           <div className="loading-spinner-ring"></div>
           <div className="loading-spinner-ring"></div>
           <div className="loading-spinner-core">
             <SparkleIcon className="h-6 w-6 text-primary animate-pulse" />
           </div>
+        </div>
+        
+        <div className="loading-progress-bar">
+          <div className="loading-progress-value"></div>
         </div>
         
         <p className="loading-screen-text mt-4 text-lg font-medium">

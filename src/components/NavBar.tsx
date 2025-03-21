@@ -2,10 +2,9 @@
 import React from 'react';
 import { useFactCheck } from '@/context/FactCheckContext';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Settings, History, Github, Info, Scale } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import ApiKeyModal from '@/components/ApiKeyModal';
 
 interface NavBarProps {
   className?: string;
@@ -13,6 +12,12 @@ interface NavBarProps {
 
 const NavBar: React.FC<NavBarProps> = ({ className }) => {
   const { setIsModalOpen } = useFactCheck();
+  const location = useLocation();
+  
+  const handleSettingsClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsModalOpen(true);
+  };
   
   return (
     <nav className={cn(
@@ -31,32 +36,38 @@ const NavBar: React.FC<NavBarProps> = ({ className }) => {
       </div>
       
       <div className="flex items-center gap-2">
-        <Link to="/history">
-          <Button variant="ghost" size="sm" className="gap-1.5">
-            <History size={18} />
-            <span className="hidden sm:inline">History</span>
-          </Button>
-        </Link>
+        {location.pathname !== '/history' && (
+          <Link to="/history">
+            <Button variant="ghost" size="sm" className="gap-1.5">
+              <History size={18} />
+              <span className="hidden sm:inline">History</span>
+            </Button>
+          </Link>
+        )}
         
-        <Link to="/about">
-          <Button variant="ghost" size="sm" className="gap-1.5">
-            <Info size={18} />
-            <span className="hidden sm:inline">About</span>
-          </Button>
-        </Link>
+        {location.pathname !== '/about' && (
+          <Link to="/about">
+            <Button variant="ghost" size="sm" className="gap-1.5">
+              <Info size={18} />
+              <span className="hidden sm:inline">About</span>
+            </Button>
+          </Link>
+        )}
         
-        <Link to="/legal">
-          <Button variant="ghost" size="sm" className="gap-1.5">
-            <Scale size={18} />
-            <span className="hidden sm:inline">Legal</span>
-          </Button>
-        </Link>
+        {location.pathname !== '/legal' && (
+          <Link to="/legal">
+            <Button variant="ghost" size="sm" className="gap-1.5">
+              <Scale size={18} />
+              <span className="hidden sm:inline">Legal</span>
+            </Button>
+          </Link>
+        )}
         
         <Button 
           variant="ghost" 
           size="sm" 
           className="gap-1.5" 
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleSettingsClick}
         >
           <Settings size={18} />
           <span className="hidden sm:inline">Settings</span>
@@ -73,8 +84,6 @@ const NavBar: React.FC<NavBarProps> = ({ className }) => {
           </Button>
         </a>
       </div>
-      
-      <ApiKeyModal />
     </nav>
   );
 };

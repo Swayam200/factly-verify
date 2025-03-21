@@ -10,6 +10,7 @@ import { validateApiKey, DEFAULT_OPENROUTER_API_KEY, openRouterModels } from '@/
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const ApiKeyModal = () => {
   const { 
@@ -26,7 +27,7 @@ const ApiKeyModal = () => {
   
   const [openrouterKey, setOpenrouterKey] = useState(apiKeys.openrouter || '');
   const [isOpenRouterValid, setIsOpenRouterValid] = useState(Boolean(apiKeys.openrouter));
-  const [showModelSelection, setShowModelSelection] = useState(false);
+  const [openAdvanced, setOpenAdvanced] = useState(false);
 
   const handleSave = () => {
     if (useDefaultApiKey) {
@@ -134,44 +135,52 @@ const ApiKeyModal = () => {
           
           <Separator />
           
-          <div>
+          <Collapsible open={openAdvanced} onOpenChange={setOpenAdvanced} className="w-full">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium mb-3">Advanced Settings</h3>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setShowModelSelection(!showModelSelection)}
-              >
-                {showModelSelection ? "Hide Models" : "Show Models"}
-              </Button>
+              <h3 className="text-lg font-medium">Advanced Settings</h3>
+              <CollapsibleTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                >
+                  {openAdvanced ? "Hide Advanced" : "Show Advanced"}
+                </Button>
+              </CollapsibleTrigger>
             </div>
             
-            {showModelSelection && (
-              <RadioGroup value={selectedModel} onValueChange={handleModelChange} className="space-y-3">
-                <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
-                  <RadioGroupItem value={openRouterModels.deepseek.id} id="deepseek" />
-                  <div className="flex items-start gap-2">
-                    <div className="text-2xl">{openRouterModels.deepseek.icon}</div>
-                    <div className="flex flex-col">
-                      <Label htmlFor="deepseek" className="font-medium cursor-pointer">{openRouterModels.deepseek.name}</Label>
-                      <span className="text-xs text-muted-foreground">{openRouterModels.deepseek.description}</span>
-                    </div>
-                  </div>
-                </div>
+            <CollapsibleContent className="mt-4 space-y-4">
+              <div className="space-y-2">
+                <h4 className="font-medium">AI Model Selection</h4>
+                <p className="text-sm text-muted-foreground">
+                  Select which AI model to use for fact checking
+                </p>
                 
-                <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
-                  <RadioGroupItem value={openRouterModels.gemini.id} id="gemini" />
-                  <div className="flex items-start gap-2">
-                    <div className="text-2xl">{openRouterModels.gemini.icon}</div>
-                    <div className="flex flex-col">
-                      <Label htmlFor="gemini" className="font-medium cursor-pointer">{openRouterModels.gemini.name}</Label>
-                      <span className="text-xs text-muted-foreground">{openRouterModels.gemini.description}</span>
+                <RadioGroup value={selectedModel} onValueChange={handleModelChange} className="space-y-3 mt-2">
+                  <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                    <RadioGroupItem value={openRouterModels.deepseek.id} id="deepseek" />
+                    <div className="flex items-start gap-2">
+                      <div className="text-2xl">{openRouterModels.deepseek.icon}</div>
+                      <div className="flex flex-col">
+                        <Label htmlFor="deepseek" className="font-medium cursor-pointer">{openRouterModels.deepseek.name}</Label>
+                        <span className="text-xs text-muted-foreground">{openRouterModels.deepseek.description}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </RadioGroup>
-            )}
-          </div>
+                  
+                  <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                    <RadioGroupItem value={openRouterModels.gemini.id} id="gemini" />
+                    <div className="flex items-start gap-2">
+                      <div className="text-2xl">{openRouterModels.gemini.icon}</div>
+                      <div className="flex flex-col">
+                        <Label htmlFor="gemini" className="font-medium cursor-pointer">{openRouterModels.gemini.name}</Label>
+                        <span className="text-xs text-muted-foreground">{openRouterModels.gemini.description}</span>
+                      </div>
+                    </div>
+                  </div>
+                </RadioGroup>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
           
           <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-md flex items-start gap-2">
             <Info size={20} className="text-blue-500 mt-0.5 flex-shrink-0" />

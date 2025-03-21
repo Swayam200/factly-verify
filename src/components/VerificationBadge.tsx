@@ -50,23 +50,23 @@ const statusConfig = {
 
 const sizeConfig = {
   sm: {
-    container: 'h-8 gap-1.5 px-2 text-xs',
+    container: 'h-8 gap-1.5 px-2.5 text-xs',
     icon: 14,
     score: 'text-xs',
   },
   md: {
-    container: 'h-10 gap-2 px-3 text-sm',
+    container: 'h-10 gap-2 px-3.5 text-sm',
     icon: 18,
     score: 'text-sm',
   },
   lg: {
-    container: 'h-12 gap-2.5 px-4 text-base',
-    icon: 24,
+    container: 'h-12 gap-2.5 px-5 text-base',
+    icon: 22,
     score: 'text-base',
   },
   xl: {
     container: 'h-16 gap-3 px-6 text-lg',
-    icon: 32,
+    icon: 28,
     score: 'text-lg',
   },
 };
@@ -89,7 +89,7 @@ const VerificationBadge: React.FC<VerificationBadgeProps> = ({
   return (
     <div 
       className={cn(
-        'rounded-full flex items-center justify-center transition-all',
+        'rounded-full flex items-center justify-center transition-all overflow-visible whitespace-nowrap',
         dimensions.container,
         `${config.textColor} border ${config.borderColor}`,
         animate && 'animate-bounce-in',
