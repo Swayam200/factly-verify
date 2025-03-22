@@ -51,7 +51,7 @@ const Legal = () => {
             <h2 className="text-2xl font-semibold mb-4">Contact Information</h2>
             <p className="text-muted-foreground">
               For legal inquiries or concerns, please contact our grievance officer at:
-              grievance@factchecker.example.com
+              <a href="mailto:swayam.panda200@gmail.com" className="text-primary hover:underline ml-1">swayam.panda200@gmail.com</a>
             </p>
           </div>
         </div>

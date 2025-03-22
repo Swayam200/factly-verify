@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useFactCheck } from '@/context/FactCheckContext';
 import VerificationBadge from './VerificationBadge';
@@ -9,9 +8,8 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import FeedbackButtons from './FeedbackButtons';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
-// Helper function to extract domain from URL
 const extractDomain = (url: string): string => {
   try {
     const domain = new URL(url).hostname;
@@ -21,14 +19,11 @@ const extractDomain = (url: string): string => {
   }
 };
 
-// Image placeholder for sources
 const fetchImageForSource = async (source: { url: string; title: string; imageUrl?: string }) => {
   if (source.imageUrl) return source.imageUrl;
   
   try {
-    // Extract domain name for the source
     const domain = extractDomain(source.url);
-    // Use a favicon service to get a placeholder icon
     return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
   } catch (error) {
     console.error('Error generating image for source:', error);
@@ -36,13 +31,24 @@ const fetchImageForSource = async (source: { url: string; title: string; imageUr
   }
 };
 
+const CHART_COLORS = [
+  '#8B5CF6',
+  '#06B6D4',
+  '#10B981',
+  '#F59E0B',
+  '#EC4899',
+  '#6366F1',
+  '#14B8A6',
+  '#F97316',
+  '#8B5CF6',
+];
+
 const ResultCard: React.FC = () => {
   const { currentResult, currentQuery, isLoading, setCurrentQuery, setCurrentResult } = useFactCheck();
   const [showAnimation, setShowAnimation] = useState(false);
   const [sourcesWithImages, setSourcesWithImages] = useState<any[]>([]);
   const [isCopied, setIsCopied] = useState(false);
   
-  // Reset animation when result changes
   useEffect(() => {
     if (currentResult) {
       setShowAnimation(true);
@@ -54,7 +60,6 @@ const ResultCard: React.FC = () => {
     }
   }, [currentResult]);
   
-  // Process sources to add images
   useEffect(() => {
     if (currentResult?.sources) {
       Promise.all(
@@ -68,13 +73,11 @@ const ResultCard: React.FC = () => {
     }
   }, [currentResult]);
   
-  // Handle new check button
   const handleNewCheck = () => {
     setCurrentQuery('');
     setCurrentResult(null);
   };
   
-  // Share functionality
   const handleShare = () => {
     if (!currentResult) return;
     
@@ -101,7 +104,6 @@ Shared from Real or Fake - AI Fact Checker`;
     }
   };
   
-  // Copy to clipboard
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
       setIsCopied(true);
@@ -116,23 +118,58 @@ Shared from Real or Fake - AI Fact Checker`;
     });
   };
   
-  // Chart data for sources distribution
   const getSourceDistributionData = () => {
     if (!currentResult?.sources || currentResult.sources.length === 0) return [];
     
-    const sourceTypes: Record<string, number> = {};
+    const categoryMap: Record<string, { count: number; sources: string[] }> = {};
+    
     currentResult.sources.forEach(source => {
       const domain = extractDomain(source.url);
-      sourceTypes[domain] = (sourceTypes[domain] || 0) + 1;
+      const category = domain.split('.')[0];
+      
+      if (!categoryMap[category]) {
+        categoryMap[category] = { count: 0, sources: [] };
+      }
+      
+      categoryMap[category].count += 1;
+      if (!categoryMap[category].sources.includes(domain)) {
+        categoryMap[category].sources.push(domain);
+      }
     });
     
-    return Object.entries(sourceTypes).map(([name, value]) => ({
-      name,
-      value
-    }));
+    return Object.entries(categoryMap)
+      .map(([name, { count, sources }]) => ({
+        name: name.charAt(0).toUpperCase() + name.slice(1),
+        value: count,
+        sources
+      }))
+      .sort((a, b) => b.value - a.value);
   };
   
-  // Loading state
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="p-3 bg-popover border border-border rounded-md shadow-lg">
+          <p className="font-medium">{data.name}</p>
+          <p className="text-sm text-muted-foreground">{data.value} sources</p>
+          {data.sources && data.sources.length > 0 && (
+            <div className="mt-1 text-xs text-muted-foreground">
+              <p>Domains:</p>
+              <ul className="list-disc list-inside">
+                {data.sources.slice(0, 3).map((source: string, i: number) => (
+                  <li key={i}>{source}</li>
+                ))}
+                {data.sources.length > 3 && <li>and {data.sources.length - 3} more...</li>}
+              </ul>
+            </div>
+          )}
+        </div>
+      );
+    }
+    return null;
+  };
+  
   if (isLoading) {
     return (
       <Card className="w-full max-w-3xl mx-auto mt-8 glass-panel animate-pulse">
@@ -148,23 +185,18 @@ Shared from Real or Fake - AI Fact Checker`;
     );
   }
   
-  // No result or query yet
   if (!currentResult && !currentQuery) {
     return null;
   }
   
-  // No result but query is being processed
   if (!currentResult && currentQuery) {
-    return null; // Using the LoadingScreen component instead
+    return null;
   }
   
-  // Result is available
   if (currentResult) {
     const { id, query, status, confidenceScore, explanation, sources, timestamp } = currentResult;
     const formattedDate = new Date(timestamp).toLocaleString();
     
-    // Chart data
-    const COLORS = ['#8B5CF6', '#06B6D4', '#10B981', '#F59E0B', '#EF4444'];
     const sourceData = getSourceDistributionData();
     
     return (
@@ -212,12 +244,16 @@ Shared from Real or Fake - AI Fact Checker`;
           </div>
           
           {sourceData.length > 0 && (
-            <div className="bg-secondary/30 rounded-lg p-4 shadow-sm">
-              <div className="flex items-center gap-2 mb-3">
-                <ChartBar size={18} className="text-primary" />
-                <h3 className="text-lg font-semibold">Source Distribution</h3>
+            <div className="bg-card rounded-lg p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <ChartBar size={18} className="text-primary" />
+                  <h3 className="text-lg font-semibold">Source Distribution</h3>
+                </div>
+                <span className="text-xs text-muted-foreground">{sources?.length || 0} sources</span>
               </div>
-              <div className="h-64 w-full">
+              
+              <div className="h-72 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -225,19 +261,36 @@ Shared from Real or Fake - AI Fact Checker`;
                       cx="50%"
                       cy="50%"
                       innerRadius={60}
-                      outerRadius={80}
+                      outerRadius={90}
                       fill="#8884d8"
-                      paddingAngle={5}
+                      paddingAngle={4}
                       dataKey="value"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent }) => `${Math.round(percent * 100)}%`}
+                      labelLine={false}
                     >
                       {sourceData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={CHART_COLORS[index % CHART_COLORS.length]} 
+                          stroke="rgba(255,255,255,0.2)"
+                          strokeWidth={1}
+                        />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => [`${value} sources`, 'Count']} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend 
+                      verticalAlign="bottom" 
+                      height={36} 
+                      formatter={(value) => (
+                        <span className="text-xs font-medium">{value}</span>
+                      )}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
+              </div>
+              
+              <div className="text-center text-xs text-muted-foreground mt-2">
+                Hover over segments for more details
               </div>
             </div>
           )}
@@ -255,11 +308,16 @@ Shared from Real or Fake - AI Fact Checker`;
                   rel="noopener noreferrer"
                   className="flex gap-3 p-3 rounded-lg border border-border hover:bg-secondary/50 transition-colors group hover-lift shadow-sm"
                 >
-                  <div className="source-image flex-shrink-0 rounded-md overflow-hidden">
+                  <div className="h-12 w-12 flex-shrink-0 rounded-md overflow-hidden bg-muted/50">
                     {source.imageUrl ? (
-                      <img src={source.imageUrl} alt={source.title} className="h-full w-full object-cover" onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/placeholder.svg';
-                      }} />
+                      <img 
+                        src={source.imageUrl} 
+                        alt={source.title} 
+                        className="h-full w-full object-cover" 
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/placeholder.svg';
+                        }} 
+                      />
                     ) : (
                       <div className="flex items-center justify-center h-full w-full bg-muted">
                         <ImageIcon className="h-6 w-6 text-muted-foreground" />
