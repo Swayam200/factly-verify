@@ -19,7 +19,7 @@ const Legal = () => {
         <div className="text-center mb-10">
           <h1 className="text-4xl font-bold mb-3">Legal Information</h1>
           <p className="text-muted-foreground">
-            Terms, disclaimers, and legal policies for our fact-checking service.
+            Terms, disclaimers, and policies for this fact-checking tool.
           </p>
         </div>
         
@@ -27,9 +27,12 @@ const Legal = () => {
           <div className="bg-card rounded-lg p-6 shadow-sm">
             <h2 className="text-2xl font-semibold mb-4">Terms of Service</h2>
             <p className="text-muted-foreground">
-              By using our fact-checking service, you agree to abide by these terms and conditions.
-              The information provided is for general informational purposes only and should not be
-              considered as professional advice.
+              This fact-checking tool is a student project created for educational and informational purposes only.
+              By using this service, you acknowledge that the information provided is not professional advice
+              and should be verified through official sources for important matters.
+            </p>
+            <p className="text-muted-foreground mt-4">
+              This service is provided "as is" without any warranties, express or implied.
             </p>
           </div>
           
@@ -38,19 +41,24 @@ const Legal = () => {
           <div className="bg-card rounded-lg p-6 shadow-sm">
             <h2 className="text-2xl font-semibold mb-4">Privacy Policy</h2>
             <p className="text-muted-foreground">
-              We respect your privacy and are committed to protecting it. This Privacy Policy explains
-              how we collect, use, and safeguard your information when you use our service.
+              We respect your privacy and are committed to protecting it. We may store your search queries
+              to improve this educational tool, but do not share this information with third parties
+              except as required by law.
             </p>
             <p className="text-muted-foreground mt-4">
-              We store your search queries to improve our service but do not share this information
-              with third parties except as required by law.
+              This is a non-commercial student project that does not collect personal identifiable information
+              beyond what is necessary for the service to function.
             </p>
           </div>
           
           <div className="bg-card rounded-lg p-6 shadow-sm">
-            <h2 className="text-2xl font-semibold mb-4">Contact Information</h2>
+            <h2 className="text-2xl font-semibold mb-4">Student Project Disclaimer</h2>
             <p className="text-muted-foreground">
-              For legal inquiries or concerns, please contact our grievance officer at:
+              This fact-checking tool was created by a student as an educational project and is not affiliated with
+              any commercial organization or professional fact-checking service.
+            </p>
+            <p className="text-muted-foreground mt-4">
+              For any questions or concerns about this project, please contact:
               <a href="mailto:swayam.panda200@gmail.com" className="text-primary hover:underline ml-1">swayam.panda200@gmail.com</a>
             </p>
           </div>
