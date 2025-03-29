@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,7 +9,7 @@ interface AuthContextType {
   session: Session | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, username?: string) => Promise<void>; // Fix return type
+  signUp: (email: string, password: string, username?: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (username: string, avatarUrl?: string) => Promise<void>;
 }
@@ -115,11 +116,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const updateProfile = async (username: string, avatarUrl?: string) => {
     try {
       setIsLoading(true);
+      
+      // Fixed: Convert Date to ISO string for the updated_at field
       const updates = {
-        id: user?.id,
+        id: user?.id as string,
         username,
         avatar_url: avatarUrl,
-        updated_at: new Date(),
+        updated_at: new Date().toISOString(), // Convert Date to string
       };
 
       const { error } = await supabase.from('profiles').upsert(updates);
