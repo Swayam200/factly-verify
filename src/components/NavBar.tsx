@@ -1,10 +1,18 @@
 
 import React from 'react';
 import { useFactCheck } from '@/context/FactCheckContext';
+import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Link, useLocation } from 'react-router-dom';
-import { Settings, History, Github, Info, Scale } from 'lucide-react';
+import { Settings, History, Github, Info, Scale, User, LogIn, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface NavBarProps {
   className?: string;
@@ -12,11 +20,20 @@ interface NavBarProps {
 
 const NavBar: React.FC<NavBarProps> = ({ className }) => {
   const { setIsModalOpen } = useFactCheck();
+  const { user, signOut } = useAuth();
   const location = useLocation();
   
   const handleSettingsClick = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsModalOpen(true);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
   
   return (
@@ -72,6 +89,34 @@ const NavBar: React.FC<NavBarProps> = ({ className }) => {
           <Settings size={18} />
           <span className="hidden sm:inline">Settings</span>
         </Button>
+        
+        {user ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <User size={16} />
+                <span className="hidden sm:inline">{user.email?.split('@')[0] || 'Account'}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link to="/profile" className="cursor-pointer">My Profile</Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
+                <LogOut className="w-4 h-4 mr-2" />
+                <span>Sign out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Link to="/auth">
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <LogIn size={16} />
+              <span className="hidden sm:inline">Sign In</span>
+            </Button>
+          </Link>
+        )}
         
         <a 
           href="https://github.com/Swayam200" 

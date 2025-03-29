@@ -1,6 +1,7 @@
 
 import { FactCheckResult, ResultStatus, Source } from '../context/FactCheckContext';
 import { openRouterModels } from './apiManager';
+import { OpenAI } from 'openai';
 
 // Helper to generate random ID for each check
 const generateId = (): string => {
@@ -82,7 +83,7 @@ const rateLimiter = {
   }
 };
 
-// Verify fact with OpenRouter API (using specified model)
+// Verify fact with OpenRouter API using OpenAI client
 export const verifyFactWithOpenRouter = async (
   query: string, 
   apiKey: string,
@@ -97,7 +98,11 @@ export const verifyFactWithOpenRouter = async (
     
     console.log(`Verifying fact with OpenRouter API using model: ${modelId}...`);
     
-    const url = 'https://openrouter.ai/api/v1/chat/completions';
+    // Initialize the OpenAI client with OpenRouter base URL
+    const client = new OpenAI({
+      baseURL: "https://openrouter.ai/api/v1",
+      apiKey: apiKey,
+    });
     
     const systemPrompt = `
     You are a factual analysis assistant that evaluates claims for truthfulness.
@@ -114,57 +119,28 @@ export const verifyFactWithOpenRouter = async (
     ENSURE your response is a complete, valid JSON object.
     `;
     
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': window.location.href,
-        'X-Title': 'Real or Fake Fact-Checker'
-      },
-      body: JSON.stringify({
-        model: modelId,
-        messages: [
-          {
-            role: 'system',
-            content: systemPrompt
-          },
-          {
-            role: 'user',
-            content: `Fact check the following claim: "${query}"`
-          }
-        ],
-        temperature: 0.1, // Lower temperature for more consistent responses
-        max_tokens: 2000  // Increased max tokens to ensure complete responses
-      }),
+    const completion = await client.chat.completions.create({
+      model: modelId,
+      messages: [
+        {
+          role: 'system',
+          content: systemPrompt
+        },
+        {
+          role: 'user',
+          content: `Fact check the following claim: "${query}"`
+        }
+      ],
+      temperature: 0.1,
+      max_tokens: 2000,
+      extra_headers: {
+        "HTTP-Referer": window.location.href,
+        "X-Title": "Real or Fake Fact-Checker"
+      }
     });
     
-    const data = await response.json();
-    
-    // Check for API error responses
-    if (data.error) {
-      console.error('OpenRouter API error:', data.error);
-      
-      // Check for rate limit or quota errors
-      if (data.error.code === 429) {
-        if (data.error.metadata?.provider_name) {
-          throw new Error(`Rate limit exceeded from provider: ${data.error.metadata.provider_name}. Please try a different model or try again later.`);
-        } else {
-          throw new Error(`Rate limit exceeded. Please try again later.`);
-        }
-      }
-      
-      throw new Error(data.error.message || 'API error occurred');
-    }
-    
-    // Ensure we have a valid response with choices
-    if (!data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
-      console.error('Invalid response format:', data);
-      throw new Error('Invalid response from API. Missing choices array.');
-    }
-    
-    // Extract and parse the JSON response from the message content
-    const content = data.choices[0]?.message?.content || '';
+    // Extract the content from the response
+    const content = completion.choices[0]?.message?.content || '';
     console.log("OpenRouter raw response:", content);
     
     let analysis;
@@ -278,3 +254,53 @@ export const verifyFact = async (
   }
 };
 
+// Save fact check to Supabase for logged-in users
+export const saveFactCheckToSupabase = async (factCheck: FactCheckResult, userId: string | undefined) => {
+  try {
+    if (!userId) return; // Don't save if user isn't logged in
+    
+    const { supabase } = await import('@/integrations/supabase/client');
+    
+    await supabase.from('fact_checks').insert({
+      user_id: userId,
+      query: factCheck.query,
+      status: factCheck.status,
+      confidence_score: factCheck.confidenceScore,
+      explanation: factCheck.explanation,
+      sources: factCheck.sources
+    });
+    
+    console.log('Fact check saved to Supabase');
+  } catch (error) {
+    console.error('Error saving fact check to Supabase:', error);
+  }
+};
+
+// Fetch user's fact checks from Supabase
+export const fetchUserFactChecks = async (userId: string | undefined): Promise<FactCheckResult[]> => {
+  try {
+    if (!userId) return []; // Return empty array if user isn't logged in
+    
+    const { supabase } = await import('@/integrations/supabase/client');
+    
+    const { data, error } = await supabase
+      .from('fact_checks')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    return data.map(item => ({
+      id: item.id,
+      query: item.query,
+      status: item.status as ResultStatus,
+      confidenceScore: item.confidence_score,
+      explanation: item.explanation,
+      sources: item.sources || [],
+      timestamp: item.created_at
+    }));
+  } catch (error) {
+    console.error('Error fetching fact checks from Supabase:', error);
+    return [];
+  }
+};

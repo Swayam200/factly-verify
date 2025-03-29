@@ -2,6 +2,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { openRouterModels, DEFAULT_OPENROUTER_API_KEY, apiKeyStorage } from '@/utils/apiManager';
 import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
+import { saveFactCheckToSupabase, fetchUserFactChecks } from '@/utils/factCheckService';
 
 export type ResultStatus = 'true' | 'false' | 'neutral' | 'unknown';
 
@@ -47,6 +49,7 @@ interface FactCheckContextType {
   toggleDarkMode: () => void;
   useDefaultApiKey: boolean;
   setUseDefaultApiKey: (useDefault: boolean) => void;
+  fetchSupabaseHistory: () => Promise<void>;
 }
 
 const defaultContextValue: FactCheckContextType = {
@@ -69,6 +72,7 @@ const defaultContextValue: FactCheckContextType = {
   toggleDarkMode: () => {},
   useDefaultApiKey: true,
   setUseDefaultApiKey: () => {},
+  fetchSupabaseHistory: async () => {},
 };
 
 const FactCheckContext = createContext<FactCheckContextType>(defaultContextValue);
@@ -89,6 +93,7 @@ export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }
   const [selectedModel, setSelectedModel] = useState(openRouterModels.deepseek.id);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [useDefaultApiKey, setUseDefaultApiKey] = useState(true);
+  const { user } = useAuth();
 
   // Initialize dark mode from localStorage or system preference
   useEffect(() => {
@@ -108,6 +113,13 @@ export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }
       }
     }
   }, []);
+
+  // When user changes, fetch their history from Supabase
+  useEffect(() => {
+    if (user) {
+      fetchSupabaseHistory();
+    }
+  }, [user]);
 
   const toggleDarkMode = () => {
     setIsDarkMode(prev => {
@@ -171,11 +183,35 @@ export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }
     localStorage.setItem('factcheck_use_default_key', String(useDefaultApiKey));
   }, [useDefaultApiKey]);
 
+  const fetchSupabaseHistory = async () => {
+    if (!user) return;
+    
+    try {
+      const supabaseResults = await fetchUserFactChecks(user.id);
+      
+      // Merge with local history, removing duplicates by ID
+      if (supabaseResults.length > 0) {
+        setResultsHistory(prevHistory => {
+          const idSet = new Set(supabaseResults.map(r => r.id));
+          const filteredLocalHistory = prevHistory.filter(item => !idSet.has(item.id));
+          return [...supabaseResults, ...filteredLocalHistory].slice(0, 50);
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching history from Supabase:', error);
+    }
+  };
+
   const addToHistory = (result: FactCheckResult) => {
     setResultsHistory(prev => {
       const newHistory = [result, ...prev].slice(0, 50);
       return newHistory;
     });
+    
+    // If user is logged in, save to Supabase
+    if (user) {
+      saveFactCheckToSupabase(result, user.id);
+    }
   };
 
   const clearHistory = () => {
@@ -197,6 +233,14 @@ export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }
   // Consider user has required keys if they're using the default key or have their own
   const hasRequiredKeys = useDefaultApiKey || Boolean(apiKeys.openrouter);
 
+  const handleSetCurrentResult = (result: FactCheckResult | null) => {
+    setCurrentResult(result);
+    setIsLoading(false);
+    if (result) {
+      addToHistory(result);
+    }
+  };
+
   return (
     <FactCheckContext.Provider
       value={{
@@ -204,13 +248,7 @@ export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }
         currentQuery,
         setCurrentQuery,
         currentResult,
-        setCurrentResult: (result) => {
-          setCurrentResult(result);
-          setIsLoading(false);
-          if (result) {
-            addToHistory(result);
-          }
-        },
+        setCurrentResult: handleSetCurrentResult,
         resultsHistory,
         addToHistory,
         clearHistory,
@@ -225,6 +263,7 @@ export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }
         toggleDarkMode,
         useDefaultApiKey,
         setUseDefaultApiKey,
+        fetchSupabaseHistory,
       }}
     >
       {children}
