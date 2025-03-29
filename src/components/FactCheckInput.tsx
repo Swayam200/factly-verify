@@ -7,6 +7,8 @@ import { Search, Sparkles, Loader2 } from 'lucide-react';
 import { verifyFact } from '@/utils/factCheckService';
 import { toast } from 'sonner';
 import { DEFAULT_OPENROUTER_API_KEY } from '@/utils/apiManager';
+import { useAuth } from '@/context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const FactCheckInput: React.FC = () => {
   const { 
@@ -18,8 +20,13 @@ const FactCheckInput: React.FC = () => {
     setIsModalOpen,
     isLoading: contextLoading,
     selectedModel,
-    useDefaultApiKey
+    useDefaultApiKey,
+    hasUsedFreeCheck,
+    setHasUsedFreeCheck
   } = useFactCheck();
+  
+  const { user } = useAuth();
+  const navigate = useNavigate();
   
   const [isLoading, setIsLoading] = useState(false);
   const [query, setQuery] = useState('');
@@ -29,6 +36,15 @@ const FactCheckInput: React.FC = () => {
     
     if (!query.trim()) {
       toast.error('Please enter a claim to verify');
+      return;
+    }
+    
+    // Check if user has already used their free check and is not logged in
+    if (hasUsedFreeCheck && !user) {
+      toast.error('Sign in required', {
+        description: 'Please sign in to continue using Fact Check'
+      });
+      navigate('/auth');
       return;
     }
     
@@ -51,6 +67,11 @@ const FactCheckInput: React.FC = () => {
       
       const result = await verifyFact(query, { openrouter: apiKey }, selectedModel);
       setCurrentResult(result);
+      
+      // If this was their first check and they're not logged in, mark the free check as used
+      if (!user && !hasUsedFreeCheck) {
+        setHasUsedFreeCheck(true);
+      }
       
       // Clear input after successful search
       setQuery('');

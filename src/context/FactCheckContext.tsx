@@ -50,6 +50,8 @@ interface FactCheckContextType {
   useDefaultApiKey: boolean;
   setUseDefaultApiKey: (useDefault: boolean) => void;
   fetchSupabaseHistory: () => Promise<void>;
+  hasUsedFreeCheck: boolean;
+  setHasUsedFreeCheck: (hasUsed: boolean) => void;
 }
 
 const defaultContextValue: FactCheckContextType = {
@@ -73,6 +75,8 @@ const defaultContextValue: FactCheckContextType = {
   useDefaultApiKey: true,
   setUseDefaultApiKey: () => {},
   fetchSupabaseHistory: async () => {},
+  hasUsedFreeCheck: false,
+  setHasUsedFreeCheck: () => {},
 };
 
 const FactCheckContext = createContext<FactCheckContextType>(defaultContextValue);
@@ -93,6 +97,7 @@ export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }
   const [selectedModel, setSelectedModel] = useState(openRouterModels.deepseek.id);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [useDefaultApiKey, setUseDefaultApiKey] = useState(true);
+  const [hasUsedFreeCheck, setHasUsedFreeCheck] = useState(false);
   const { user } = useAuth();
 
   // Initialize dark mode from localStorage or system preference
@@ -111,6 +116,12 @@ export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }
       if (systemPrefersDark) {
         document.documentElement.classList.add('dark');
       }
+    }
+
+    // Check if the user has used their free check
+    const usedFreeCheck = localStorage.getItem('factcheck_used_free_check');
+    if (usedFreeCheck === 'true') {
+      setHasUsedFreeCheck(true);
     }
   }, []);
 
@@ -182,6 +193,11 @@ export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }
   useEffect(() => {
     localStorage.setItem('factcheck_use_default_key', String(useDefaultApiKey));
   }, [useDefaultApiKey]);
+
+  // Store whether user has used their free check
+  useEffect(() => {
+    localStorage.setItem('factcheck_used_free_check', String(hasUsedFreeCheck));
+  }, [hasUsedFreeCheck]);
 
   const fetchSupabaseHistory = async () => {
     if (!user) return;
@@ -264,6 +280,8 @@ export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }
         useDefaultApiKey,
         setUseDefaultApiKey,
         fetchSupabaseHistory,
+        hasUsedFreeCheck,
+        setHasUsedFreeCheck,
       }}
     >
       {children}
