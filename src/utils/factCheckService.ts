@@ -139,13 +139,29 @@ export const verifyFactWithOpenRouter = async (
       }),
     });
     
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('OpenRouter API error:', errorData);
-      throw new Error(`OpenRouter API error: ${errorData.error?.message || response.statusText}`);
+    const data = await response.json();
+    
+    // Check for API error responses
+    if (data.error) {
+      console.error('OpenRouter API error:', data.error);
+      
+      // Check for rate limit or quota errors
+      if (data.error.code === 429) {
+        if (data.error.metadata?.provider_name) {
+          throw new Error(`Rate limit exceeded from provider: ${data.error.metadata.provider_name}. Please try a different model or try again later.`);
+        } else {
+          throw new Error(`Rate limit exceeded. Please try again later.`);
+        }
+      }
+      
+      throw new Error(data.error.message || 'API error occurred');
     }
     
-    const data = await response.json();
+    // Ensure we have a valid response with choices
+    if (!data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+      console.error('Invalid response format:', data);
+      throw new Error('Invalid response from API. Missing choices array.');
+    }
     
     // Extract and parse the JSON response from the message content
     const content = data.choices[0]?.message?.content || '';
@@ -222,9 +238,26 @@ export const verifyFact = async (
     
     // Try with OpenRouter API
     if (apiKeys.openrouter) {
-      // Use specified model or default to DeepSeek
-      const modelId = modelPreference || openRouterModels.deepseek.id;
-      return await verifyFactWithOpenRouter(query, apiKeys.openrouter, modelId);
+      try {
+        // Use specified model or default to DeepSeek
+        const modelId = modelPreference || openRouterModels.deepseek.id;
+        return await verifyFactWithOpenRouter(query, apiKeys.openrouter, modelId);
+      } catch (error) {
+        // If the error is about rate limits, create a special error result
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+        if (errorMessage.includes('Rate limit') || errorMessage.includes('quota')) {
+          return {
+            id: generateId(),
+            query,
+            status: 'unknown',
+            confidenceScore: 0,
+            explanation: `API Rate Limit Exceeded: The AI model is currently experiencing high traffic. Please try again in a few minutes or try a different model.`,
+            sources: [],
+            timestamp: new Date().toISOString()
+          };
+        }
+        throw error;
+      }
     }
     
     throw new Error('No API key available. Please try again later.');
@@ -244,3 +277,4 @@ export const verifyFact = async (
     };
   }
 };
+
