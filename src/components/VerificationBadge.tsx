@@ -26,11 +26,11 @@ const VerificationBadge: React.FC<VerificationBadgeProps> = ({
     lg: 'h-16 w-16 text-lg'
   };
   
-  // Icon size mappings
+  // Icon size mappings - adjusted smaller to prevent clipping
   const iconSize = {
-    sm: 18,
-    md: 24,
-    lg: 32
+    sm: 16,
+    md: 20,
+    lg: 28
   };
   
   // Status-specific styles
@@ -41,7 +41,7 @@ const VerificationBadge: React.FC<VerificationBadgeProps> = ({
     unknown: 'border-result-unknown bg-result-unknown/10 text-result-unknown'
   };
   
-  // Status-specific icons with more aesthetic look
+  // Status-specific icons
   const StatusIcon = {
     true: CheckCircle2,
     false: XCircle,
@@ -55,15 +55,19 @@ const VerificationBadge: React.FC<VerificationBadgeProps> = ({
   return (
     <div 
       className={cn(
-        'flex items-center justify-center rounded-full border-2 overflow-visible shadow-md',
+        'flex items-center justify-center rounded-full border-2 shadow-md',
         statusClasses[status],
         sizeClasses[size],
         animate && 'animate-badge-pop',
         className
       )}
     >
-      <div className="flex flex-col items-center justify-center">
-        <StatusIcon size={iconSize[size]} strokeWidth={1.5} className="overflow-visible" />
+      <div className="flex flex-col items-center justify-center p-0.5">
+        <StatusIcon 
+          size={iconSize[size]} 
+          strokeWidth={1.75} 
+          className="transform scale-90" 
+        />
         {size === 'lg' && (
           <span className="font-bold mt-0.5 text-xs">{confidencePercent}%</span>
         )}
