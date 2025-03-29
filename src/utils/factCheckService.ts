@@ -2,6 +2,7 @@
 import { FactCheckResult, ResultStatus, Source } from '../context/FactCheckContext';
 import { openRouterModels } from './apiManager';
 import { OpenAI } from 'openai';
+import { Json } from '@/integrations/supabase/types';
 
 // Helper to generate random ID for each check
 const generateId = (): string => {
@@ -83,6 +84,30 @@ const rateLimiter = {
   }
 };
 
+// Helper to convert Source[] to a safe JSON format for Supabase
+const sourcesToJson = (sources: Source[]): Json => {
+  return sources.map(source => ({
+    url: source.url,
+    title: source.title,
+    snippet: source.snippet || "",
+    reliability: source.reliability || 0.5,
+    imageUrl: source.imageUrl || ""
+  })) as Json;
+};
+
+// Helper to convert JSON from Supabase back to Source[]
+const jsonToSources = (json: Json | null): Source[] => {
+  if (!json || !Array.isArray(json)) return [];
+  
+  return json.map((item: any) => ({
+    url: item.url || 'https://example.com',
+    title: item.title || 'Source',
+    snippet: item.snippet || '',
+    reliability: typeof item.reliability === 'number' ? item.reliability : 0.5,
+    imageUrl: item.imageUrl || undefined
+  }));
+};
+
 // Verify fact with OpenRouter API using OpenAI client
 export const verifyFactWithOpenRouter = async (
   query: string, 
@@ -119,6 +144,7 @@ export const verifyFactWithOpenRouter = async (
     ENSURE your response is a complete, valid JSON object.
     `;
     
+    // Fix: Use headers option instead of extra_headers
     const completion = await client.chat.completions.create({
       model: modelId,
       messages: [
@@ -133,7 +159,8 @@ export const verifyFactWithOpenRouter = async (
       ],
       temperature: 0.1,
       max_tokens: 2000,
-      extra_headers: {
+      // Pass headers as part of the options parameter
+      headers: {
         "HTTP-Referer": window.location.href,
         "X-Title": "Real or Fake Fact-Checker"
       }
@@ -261,13 +288,14 @@ export const saveFactCheckToSupabase = async (factCheck: FactCheckResult, userId
     
     const { supabase } = await import('@/integrations/supabase/client');
     
+    // Convert Source[] to Json for storage
     await supabase.from('fact_checks').insert({
       user_id: userId,
       query: factCheck.query,
       status: factCheck.status,
       confidence_score: factCheck.confidenceScore,
       explanation: factCheck.explanation,
-      sources: factCheck.sources
+      sources: sourcesToJson(factCheck.sources)
     });
     
     console.log('Fact check saved to Supabase');
@@ -286,18 +314,22 @@ export const fetchUserFactChecks = async (userId: string | undefined): Promise<F
     const { data, error } = await supabase
       .from('fact_checks')
       .select('*')
+      .eq('user_id', userId)
       .order('created_at', { ascending: false });
     
     if (error) throw error;
     
+    if (!data) return [];
+    
+    // Convert database records to FactCheckResult objects
     return data.map(item => ({
       id: item.id,
       query: item.query,
       status: item.status as ResultStatus,
-      confidenceScore: item.confidence_score,
-      explanation: item.explanation,
-      sources: item.sources || [],
-      timestamp: item.created_at
+      confidenceScore: item.confidence_score || 0,
+      explanation: item.explanation || '',
+      sources: jsonToSources(item.sources),
+      timestamp: item.created_at || new Date().toISOString()
     }));
   } catch (error) {
     console.error('Error fetching fact checks from Supabase:', error);
