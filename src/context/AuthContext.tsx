@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,7 +8,7 @@ interface AuthContextType {
   session: Session | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, username?: string) => Promise<void>;
+  signUp: (email: string, password: string, username?: string) => Promise<void>; // Fix return type
   signOut: () => Promise<void>;
   updateProfile: (username: string, avatarUrl?: string) => Promise<void>;
 }
@@ -35,45 +34,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up the auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setIsLoading(false);
-        
-        if (event === 'SIGNED_IN') {
-          toast({
-            title: "Signed in successfully",
-            description: `Welcome${session?.user?.email ? ` ${session.user.email}` : ''}!`,
-          });
-        }
-        
-        if (event === 'SIGNED_OUT') {
-          toast({
-            title: "Signed out successfully",
-          });
-        }
-      }
-    );
-
-    // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
     });
 
-    return () => subscription.unsubscribe();
-  }, [toast]);
+    supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setIsLoading(false);
+    });
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
+      setIsLoading(true);
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-      
       if (error) throw error;
     } catch (error: any) {
       toast({
@@ -81,13 +61,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         description: error.message || "An error occurred during sign in",
         variant: "destructive",
       });
-      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const signUp = async (email: string, password: string, username?: string) => {
     try {
-      const { error, data } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -104,7 +85,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         description: "Please check your email to verify your account",
       });
       
-      return data;
+      // Don't return anything to match Promise<void> return type
     } catch (error: any) {
       toast({
         title: "Sign up failed",
@@ -117,44 +98,50 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
+      setIsLoading(true);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
     } catch (error: any) {
       toast({
         title: "Sign out failed",
         description: error.message || "An error occurred during sign out",
         variant: "destructive",
       });
-      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const updateProfile = async (username: string, avatarUrl?: string) => {
     try {
-      if (!user) throw new Error("User not authenticated");
-      
-      // Update profile in profiles table
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          username,
-          avatar_url: avatarUrl,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', user.id);
-      
+      setIsLoading(true);
+      const updates = {
+        id: user?.id,
+        username,
+        avatar_url: avatarUrl,
+        updated_at: new Date(),
+      };
+
+      const { error } = await supabase.from('profiles').upsert(updates);
+
       if (error) throw error;
-      
+
+      setUser({
+        ...user!,
+        user_metadata: { ...user?.user_metadata, username, avatar_url: avatarUrl },
+      });
+
       toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully",
+        title: "Profile updated successfully",
       });
     } catch (error: any) {
       toast({
-        title: "Update failed",
-        description: error.message || "An error occurred while updating your profile",
+        title: "Profile update failed",
+        description: error.message || "An error occurred during profile update",
         variant: "destructive",
       });
-      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
