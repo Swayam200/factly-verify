@@ -46,10 +46,10 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <FactCheckProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
+          <BrowserRouter>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
               <div className="flex flex-col min-h-screen">
                 <NavBar />
                 <ApiKeyModal />
@@ -67,8 +67,8 @@ const App = () => {
                   </main>
                 </Suspense>
               </div>
-            </BrowserRouter>
-          </TooltipProvider>
+            </TooltipProvider>
+          </BrowserRouter>
         </FactCheckProvider>
       </AuthProvider>
     </QueryClientProvider>
