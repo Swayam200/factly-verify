@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useFactCheck } from '@/context/FactCheckContext';
 import VerificationBadge from './VerificationBadge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bookmark, Share2, Clock, ArrowRight, LinkIcon, ExternalLink, ImageIcon, Copy, Check, ChartBar } from 'lucide-react';
+import { Bookmark, Share2, Clock, ArrowRight, LinkIcon, ExternalLink, ImageIcon, Copy, Check } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import FeedbackButtons from './FeedbackButtons';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import SourcesChart from './SourcesChart';
 
 const extractDomain = (url: string): string => {
   try {
@@ -30,18 +31,6 @@ const fetchImageForSource = async (source: { url: string; title: string; imageUr
     return '/placeholder.svg';
   }
 };
-
-const CHART_COLORS = [
-  '#8B5CF6',
-  '#06B6D4',
-  '#10B981',
-  '#F59E0B',
-  '#EC4899',
-  '#6366F1',
-  '#14B8A6',
-  '#F97316',
-  '#8B5CF6',
-];
 
 const ResultCard: React.FC = () => {
   const { currentResult, currentQuery, isLoading, setCurrentQuery, setCurrentResult } = useFactCheck();
@@ -118,58 +107,6 @@ Shared from Real or Fake - AI Fact Checker`;
     });
   };
   
-  const getSourceDistributionData = () => {
-    if (!currentResult?.sources || currentResult.sources.length === 0) return [];
-    
-    const categoryMap: Record<string, { count: number; sources: string[] }> = {};
-    
-    currentResult.sources.forEach(source => {
-      const domain = extractDomain(source.url);
-      const category = domain.split('.')[0];
-      
-      if (!categoryMap[category]) {
-        categoryMap[category] = { count: 0, sources: [] };
-      }
-      
-      categoryMap[category].count += 1;
-      if (!categoryMap[category].sources.includes(domain)) {
-        categoryMap[category].sources.push(domain);
-      }
-    });
-    
-    return Object.entries(categoryMap)
-      .map(([name, { count, sources }]) => ({
-        name: name.charAt(0).toUpperCase() + name.slice(1),
-        value: count,
-        sources
-      }))
-      .sort((a, b) => b.value - a.value);
-  };
-  
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="p-3 bg-popover border border-border rounded-md shadow-lg">
-          <p className="font-medium">{data.name}</p>
-          <p className="text-sm text-muted-foreground">{data.value} sources</p>
-          {data.sources && data.sources.length > 0 && (
-            <div className="mt-1 text-xs text-muted-foreground">
-              <p>Domains:</p>
-              <ul className="list-disc list-inside">
-                {data.sources.slice(0, 3).map((source: string, i: number) => (
-                  <li key={i}>{source}</li>
-                ))}
-                {data.sources.length > 3 && <li>and {data.sources.length - 3} more...</li>}
-              </ul>
-            </div>
-          )}
-        </div>
-      );
-    }
-    return null;
-  };
-  
   if (isLoading) {
     return (
       <Card className="w-full max-w-3xl mx-auto mt-8 glass-panel animate-pulse">
@@ -196,8 +133,6 @@ Shared from Real or Fake - AI Fact Checker`;
   if (currentResult) {
     const { id, query, status, confidenceScore, explanation, sources, timestamp } = currentResult;
     const formattedDate = new Date(timestamp).toLocaleString();
-    
-    const sourceData = getSourceDistributionData();
     
     return (
       <Card 
@@ -243,56 +178,8 @@ Shared from Real or Fake - AI Fact Checker`;
             <p className="text-muted-foreground">{explanation}</p>
           </div>
           
-          {sourceData.length > 0 && (
-            <div className="bg-card rounded-lg p-4 shadow-sm">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <ChartBar size={18} className="text-primary" />
-                  <h3 className="text-lg font-semibold">Source Distribution</h3>
-                </div>
-                <span className="text-xs text-muted-foreground">{sources?.length || 0} sources</span>
-              </div>
-              
-              <div className="h-72 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={sourceData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={90}
-                      fill="#8884d8"
-                      paddingAngle={4}
-                      dataKey="value"
-                      label={({ name, percent }) => `${Math.round(percent * 100)}%`}
-                      labelLine={false}
-                    >
-                      {sourceData.map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={CHART_COLORS[index % CHART_COLORS.length]} 
-                          stroke="rgba(255,255,255,0.2)"
-                          strokeWidth={1}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend 
-                      verticalAlign="bottom" 
-                      height={36} 
-                      formatter={(value) => (
-                        <span className="text-xs font-medium">{value}</span>
-                      )}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              
-              <div className="text-center text-xs text-muted-foreground mt-2">
-                Hover over segments for more details
-              </div>
-            </div>
+          {sources && sources.length > 0 && (
+            <SourcesChart sources={sources} />
           )}
           
           <Separator />

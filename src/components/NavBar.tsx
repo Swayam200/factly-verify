@@ -35,6 +35,11 @@ const NavBar: React.FC<NavBarProps> = ({ className }) => {
       console.error('Error signing out:', error);
     }
   };
+
+  // Get username from user metadata or fallback to email before @ symbol
+  const displayName = user ? 
+    (user.user_metadata?.username || user.email?.split('@')[0]) : 
+    'Account';
   
   return (
     <nav className={cn(
@@ -95,7 +100,7 @@ const NavBar: React.FC<NavBarProps> = ({ className }) => {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-1.5">
                 <User size={16} />
-                <span className="hidden sm:inline">{user.email?.split('@')[0] || 'Account'}</span>
+                <span className="hidden sm:inline">{displayName}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

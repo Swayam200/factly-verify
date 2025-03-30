@@ -20,7 +20,7 @@ const loginSchema = z.object({
 });
 
 const signupSchema = loginSchema.extend({
-  username: z.string().min(3, { message: "Username must be at least 3 characters" }).optional(),
+  username: z.string().min(3, { message: "Username must be at least 3 characters" }),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -169,7 +169,7 @@ const Auth: React.FC = () => {
                       name="username"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Username (Optional)</FormLabel>
+                          <FormLabel>Username</FormLabel>
                           <FormControl>
                             <Input placeholder="johndoe" {...field} />
                           </FormControl>

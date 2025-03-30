@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +14,13 @@ const Profile: React.FC = () => {
   const [username, setUsername] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   
+  // Initialize the username field with current username
+  useEffect(() => {
+    if (user?.user_metadata?.username) {
+      setUsername(user.user_metadata.username);
+    }
+  }, [user]);
+  
   // Redirect if not logged in
   if (!user) {
     return <Navigate to="/auth" />;
@@ -26,7 +33,7 @@ const Profile: React.FC = () => {
     try {
       setIsUpdating(true);
       await updateProfile(username);
-      setUsername('');
+      // Username is now updated in the user object
     } catch (error) {
       console.error('Error updating profile:', error);
     } finally {
@@ -41,6 +48,9 @@ const Profile: React.FC = () => {
       console.error('Error signing out:', error);
     }
   };
+  
+  // Get the current username from metadata if available
+  const currentUsername = user.user_metadata?.username || 'Not set';
   
   return (
     <div className="container relative flex flex-col items-center justify-center min-h-screen px-4 mx-auto">
@@ -67,12 +77,19 @@ const Profile: React.FC = () => {
               </div>
             </div>
             
+            <div className="space-y-1">
+              <Label>Current Username</Label>
+              <div className="p-2 border rounded-md bg-muted">
+                {currentUsername}
+              </div>
+            </div>
+            
             <form onSubmit={handleUpdateProfile} className="space-y-4">
               <div className="space-y-1">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="username">Update Username</Label>
                 <Input
                   id="username"
-                  placeholder="Set your username"
+                  placeholder="Enter new username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                 />
@@ -85,7 +102,7 @@ const Profile: React.FC = () => {
                     Updating...
                   </>
                 ) : (
-                  "Update Profile"
+                  "Update Username"
                 )}
               </Button>
             </form>
