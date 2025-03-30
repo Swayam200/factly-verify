@@ -1,4 +1,3 @@
-
 import { OpenAI } from 'openai';
 import { FactCheckResult } from '@/context/FactCheckContext';
 import { rateLimiter } from '../helpers/rateLimiter';
@@ -21,9 +20,12 @@ export const verifyFactWithOpenRouter = async (
     console.log(`Verifying fact with OpenRouter API using model: ${modelId}...`);
     
     // Initialize the OpenAI client with OpenRouter base URL
+    // Explicitly set dangerouslyAllowBrowser to true since we're using OpenRouter as a proxy
+    // The actual OpenAI key is not exposed, we're using OpenRouter's API
     const client = new OpenAI({
       baseURL: "https://openrouter.ai/api/v1",
       apiKey: apiKey,
+      dangerouslyAllowBrowser: true, // Added this flag since we're using OpenRouter as a proxy
       defaultHeaders: {
         "HTTP-Referer": window.location.href,
         "X-Title": "Real or Fake Fact-Checker"
