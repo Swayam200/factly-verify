@@ -1,8 +1,35 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { FactCheckResult, OpenRouterApiKey } from '@/utils/types';
-import { openRouterModels } from '@/utils/apiManager';
 
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+
+// Types
 export type ResultStatus = 'true' | 'false' | 'neutral' | 'unknown';
+
+export interface Source {
+  url: string;
+  title: string;
+  snippet?: string;
+  reliability?: number;
+  imageUrl?: string;
+}
+
+export interface FactCheckResult {
+  id: string;
+  query: string;
+  status: ResultStatus;
+  confidenceScore: number;
+  explanation: string;
+  sources: Source[];
+  timestamp: number;
+  feedback?: {
+    helpful: number;
+    notHelpful: number;
+  };
+}
+
+export interface OpenRouterApiKey {
+  key: string;
+  validUntil: number;
+}
 
 export interface FactCheckContextType {
   currentQuery: string;
@@ -42,7 +69,7 @@ export const FactCheckProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [resultsHistory, setResultsHistory] = useState<FactCheckResult[]>([]);
   const [useDefaultApiKey, setUseDefaultApiKey] = useState(true);
-  const [selectedModel, setSelectedModel] = useState(openRouterModels.deepseek.id);
+  const [selectedModel, setSelectedModel] = useState('deepseek-coder');
   const [hasUsedFreeCheck, setHasUsedFreeCheck] = useState(false);
   
   // Dark mode state
@@ -125,4 +152,13 @@ export const FactCheckProvider: React.FC<{ children: ReactNode }> = ({ children 
   };
   
   return <FactCheckContext.Provider value={value}>{children}</FactCheckContext.Provider>;
+};
+
+// Export the hook to use the context
+export const useFactCheck = (): FactCheckContextType => {
+  const context = useContext(FactCheckContext);
+  if (context === undefined) {
+    throw new Error('useFactCheck must be used within a FactCheckProvider');
+  }
+  return context;
 };
