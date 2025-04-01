@@ -13,6 +13,8 @@ import Legal from "./pages/Legal";
 import About from "./pages/About";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
+import Admin from "./pages/Admin";
+import Share from "./pages/Share";
 import NavBar from "./components/NavBar";
 import ApiKeyModal from "./components/ApiKeyModal";
 import { Suspense, lazy } from "react";
@@ -62,6 +64,8 @@ const App = () => {
                       <Route path="/about" element={<About />} />
                       <Route path="/auth" element={<Auth />} />
                       <Route path="/profile" element={<Profile />} />
+                      <Route path="/admin" element={<Admin />} />
+                      <Route path="/share" element={<Share />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </main>

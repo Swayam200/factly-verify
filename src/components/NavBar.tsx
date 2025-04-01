@@ -4,7 +4,7 @@ import { useFactCheck } from '@/context/FactCheckContext';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Link, useLocation } from 'react-router-dom';
-import { Settings, History, Github, Info, Scale, User, LogIn, LogOut } from 'lucide-react';
+import { Settings, History, Github, Info, Scale, User, LogIn, LogOut, Sun, Moon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -13,13 +13,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface NavBarProps {
   className?: string;
 }
 
 const NavBar: React.FC<NavBarProps> = ({ className }) => {
-  const { setIsModalOpen } = useFactCheck();
+  const { setIsModalOpen, isDarkMode, toggleDarkMode } = useFactCheck();
   const { user, signOut } = useAuth();
   const location = useLocation();
   
@@ -40,6 +41,9 @@ const NavBar: React.FC<NavBarProps> = ({ className }) => {
   const displayName = user ? 
     (user.user_metadata?.username || user.email?.split('@')[0]) : 
     'Account';
+  
+  // Get avatar URL from metadata
+  const avatarUrl = user?.user_metadata?.avatar_url;
   
   return (
     <nav className={cn(
@@ -95,11 +99,28 @@ const NavBar: React.FC<NavBarProps> = ({ className }) => {
           <span className="hidden sm:inline">Settings</span>
         </Button>
         
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={toggleDarkMode}
+          title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+        >
+          {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+        </Button>
+        
         {user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-1.5">
-                <User size={16} />
+                <Avatar className="h-6 w-6">
+                  {avatarUrl ? (
+                    <AvatarImage src={avatarUrl} alt={displayName} />
+                  ) : (
+                    <AvatarFallback className="text-xs">
+                      {displayName.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
                 <span className="hidden sm:inline">{displayName}</span>
               </Button>
             </DropdownMenuTrigger>
@@ -107,6 +128,11 @@ const NavBar: React.FC<NavBarProps> = ({ className }) => {
               <DropdownMenuItem asChild>
                 <Link to="/profile" className="cursor-pointer">My Profile</Link>
               </DropdownMenuItem>
+              {user.email === "admin@factcheck.com" && (
+                <DropdownMenuItem asChild>
+                  <Link to="/admin" className="cursor-pointer">Admin Dashboard</Link>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
                 <LogOut className="w-4 h-4 mr-2" />

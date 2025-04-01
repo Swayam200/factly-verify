@@ -1,290 +1,128 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { openRouterModels, DEFAULT_OPENROUTER_API_KEY, apiKeyStorage } from '@/utils/apiManager';
-import { toast } from 'sonner';
-import { useAuth } from '@/context/AuthContext';
-import { saveFactCheckToSupabase, fetchUserFactChecks } from '@/utils/factCheckService';
+import { FactCheckResult, OpenRouterApiKey } from '@/utils/types';
+import { openRouterModels } from '@/utils/apiManager';
 
 export type ResultStatus = 'true' | 'false' | 'neutral' | 'unknown';
 
-export interface Source {
-  url: string;
-  title: string;
-  snippet?: string;
-  reliability?: number;
-  imageUrl?: string;
-}
-
-export interface FactCheckResult {
-  id: string;
-  query: string;
-  status: ResultStatus;
-  confidenceScore: number;
-  explanation: string;
-  sources: Source[];
-  timestamp: string;
-}
-
-interface ApiKeys {
-  openrouter?: string;
-}
-
-interface FactCheckContextType {
-  isLoading: boolean;
+export interface FactCheckContextType {
   currentQuery: string;
   setCurrentQuery: (query: string) => void;
   currentResult: FactCheckResult | null;
   setCurrentResult: (result: FactCheckResult | null) => void;
-  resultsHistory: FactCheckResult[];
-  addToHistory: (result: FactCheckResult) => void;
-  clearHistory: () => void;
-  apiKeys: ApiKeys;
-  setApiKey: (key: keyof ApiKeys, value: string) => void;
-  hasRequiredKeys: boolean;
+  isLoading: boolean;
+  setIsLoading: (loading: boolean) => void;
+  apiKeys: { openrouter?: string };
+  setApiKey: (platform: string, key: string) => void;
   isModalOpen: boolean;
-  setIsModalOpen: (isOpen: boolean) => void;
-  selectedModel: string;
-  setSelectedModel: (modelId: string) => void;
-  isDarkMode: boolean;
-  toggleDarkMode: () => void;
+  setIsModalOpen: (open: boolean) => void;
+  hasRequiredKeys: boolean;
+  resultsHistory: FactCheckResult[];
+  setResultsHistory: (history: FactCheckResult[]) => void;
   useDefaultApiKey: boolean;
   setUseDefaultApiKey: (useDefault: boolean) => void;
-  fetchSupabaseHistory: () => Promise<void>;
+  selectedModel: string;
+  setSelectedModel: (model: string) => void;
   hasUsedFreeCheck: boolean;
-  setHasUsedFreeCheck: (hasUsed: boolean) => void;
+  setHasUsedFreeCheck: (used: boolean) => void;
+  
+  // Dark mode toggle
+  isDarkMode: boolean;
+  toggleDarkMode: () => void;
 }
 
-const defaultContextValue: FactCheckContextType = {
-  isLoading: false,
-  currentQuery: '',
-  setCurrentQuery: () => {},
-  currentResult: null,
-  setCurrentResult: () => {},
-  resultsHistory: [],
-  addToHistory: () => {},
-  clearHistory: () => {},
-  apiKeys: {},
-  setApiKey: () => {},
-  hasRequiredKeys: false,
-  isModalOpen: false,
-  setIsModalOpen: () => {},
-  selectedModel: openRouterModels.deepseek.id,
-  setSelectedModel: () => {},
-  isDarkMode: false,
-  toggleDarkMode: () => {},
-  useDefaultApiKey: true,
-  setUseDefaultApiKey: () => {},
-  fetchSupabaseHistory: async () => {},
-  hasUsedFreeCheck: false,
-  setHasUsedFreeCheck: () => {},
-};
+export const FactCheckContext = createContext<FactCheckContextType | undefined>(undefined);
 
-const FactCheckContext = createContext<FactCheckContextType>(defaultContextValue);
-
-export const useFactCheck = () => useContext(FactCheckContext);
-
-interface FactCheckProviderProps {
-  children: ReactNode;
-}
-
-export const FactCheckProvider: React.FC<FactCheckProviderProps> = ({ children }) => {
-  const [isLoading, setIsLoading] = useState(false);
+export const FactCheckProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [currentQuery, setCurrentQuery] = useState('');
   const [currentResult, setCurrentResult] = useState<FactCheckResult | null>(null);
-  const [resultsHistory, setResultsHistory] = useState<FactCheckResult[]>([]);
-  const [apiKeys, setApiKeys] = useState<ApiKeys>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiKeys, setApiKeys] = useState<{ [key: string]: string }>({
+    openrouter: localStorage.getItem('openrouterApiKey') || '',
+  });
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedModel, setSelectedModel] = useState(openRouterModels.deepseek.id);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [resultsHistory, setResultsHistory] = useState<FactCheckResult[]>([]);
   const [useDefaultApiKey, setUseDefaultApiKey] = useState(true);
+  const [selectedModel, setSelectedModel] = useState(openRouterModels.deepseek.id);
   const [hasUsedFreeCheck, setHasUsedFreeCheck] = useState(false);
-  const { user } = useAuth();
-
-  // Initialize dark mode from localStorage or system preference
+  
+  // Dark mode state
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    // Check local storage or system preference
+    const savedMode = localStorage.getItem('darkMode');
+    if (savedMode !== null) {
+      return savedMode === 'true';
+    }
+    // Default to system preference
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+  
   useEffect(() => {
-    const savedTheme = localStorage.getItem('factcheck_theme');
-    if (savedTheme === 'dark') {
-      setIsDarkMode(true);
-      document.documentElement.classList.add('dark');
-    } else if (savedTheme === 'light') {
-      setIsDarkMode(false);
-      document.documentElement.classList.remove('dark');
-    } else {
-      // Check system preference
-      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setIsDarkMode(systemPrefersDark);
-      if (systemPrefersDark) {
-        document.documentElement.classList.add('dark');
-      }
-    }
-
-    // Check if the user has used their free check
-    const usedFreeCheck = localStorage.getItem('factcheck_used_free_check');
-    if (usedFreeCheck === 'true') {
-      setHasUsedFreeCheck(true);
-    }
-  }, []);
-
-  // When user changes, fetch their history from Supabase
-  useEffect(() => {
-    if (user) {
-      fetchSupabaseHistory();
-    }
-  }, [user]);
-
-  const toggleDarkMode = () => {
-    setIsDarkMode(prev => {
-      const newMode = !prev;
-      localStorage.setItem('factcheck_theme', newMode ? 'dark' : 'light');
-      
-      if (newMode) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-      
-      return newMode;
-    });
-  };
-
-  useEffect(() => {
-    const savedHistory = localStorage.getItem('factcheckHistory');
-    const savedApiKeys = localStorage.getItem('factcheckApiKeys');
-    const savedModel = localStorage.getItem('factcheck_selected_model');
-    const savedUseDefaultKey = localStorage.getItem('factcheck_use_default_key');
-    
-    if (savedHistory) {
-      try {
-        setResultsHistory(JSON.parse(savedHistory));
-      } catch (error) {
-        console.error('Error parsing saved history:', error);
-      }
-    }
-    
-    if (savedApiKeys) {
-      try {
-        setApiKeys(JSON.parse(savedApiKeys));
-      } catch (error) {
-        console.error('Error parsing saved API keys:', error);
-      }
-    }
-    
-    if (savedModel) {
-      setSelectedModel(savedModel);
-    }
-
-    if (savedUseDefaultKey) {
-      setUseDefaultApiKey(savedUseDefaultKey === 'true');
+    const storedHistory = localStorage.getItem('resultsHistory');
+    if (storedHistory) {
+      setResultsHistory(JSON.parse(storedHistory));
     }
   }, []);
   
   useEffect(() => {
-    localStorage.setItem('factcheckHistory', JSON.stringify(resultsHistory));
+    localStorage.setItem('resultsHistory', JSON.stringify(resultsHistory));
   }, [resultsHistory]);
   
   useEffect(() => {
-    localStorage.setItem('factcheckApiKeys', JSON.stringify(apiKeys));
-  }, [apiKeys]);
+    localStorage.setItem('openrouterApiKey', apiKeys.openrouter || '');
+  }, [apiKeys.openrouter]);
   
   useEffect(() => {
-    localStorage.setItem('factcheck_selected_model', selectedModel);
-  }, [selectedModel]);
-
+    const hasKeys = !!apiKeys.openrouter || useDefaultApiKey;
+    console.log('hasRequiredKeys', hasKeys);
+    console.log('apiKeys', apiKeys);
+    console.log('useDefaultApiKey', useDefaultApiKey);
+    
+  }, [apiKeys, useDefaultApiKey]);
+  
+  // Apply dark mode class to document
   useEffect(() => {
-    localStorage.setItem('factcheck_use_default_key', String(useDefaultApiKey));
-  }, [useDefaultApiKey]);
-
-  // Store whether user has used their free check
-  useEffect(() => {
-    localStorage.setItem('factcheck_used_free_check', String(hasUsedFreeCheck));
-  }, [hasUsedFreeCheck]);
-
-  const fetchSupabaseHistory = async () => {
-    if (!user) return;
-    
-    try {
-      const supabaseResults = await fetchUserFactChecks(user.id);
-      
-      // Merge with local history, removing duplicates by ID
-      if (supabaseResults.length > 0) {
-        setResultsHistory(prevHistory => {
-          const idSet = new Set(supabaseResults.map(r => r.id));
-          const filteredLocalHistory = prevHistory.filter(item => !idSet.has(item.id));
-          return [...supabaseResults, ...filteredLocalHistory].slice(0, 50);
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching history from Supabase:', error);
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
     }
+    localStorage.setItem('darkMode', isDarkMode.toString());
+  }, [isDarkMode]);
+  
+  const setApiKey = (platform: string, key: string) => {
+    setApiKeys(prevKeys => ({ ...prevKeys, [platform]: key }));
   };
-
-  const addToHistory = (result: FactCheckResult) => {
-    setResultsHistory(prev => {
-      const newHistory = [result, ...prev].slice(0, 50);
-      return newHistory;
-    });
-    
-    // If user is logged in, save to Supabase
-    if (user) {
-      saveFactCheckToSupabase(result, user.id);
-    }
+  
+  // Toggle dark mode function
+  const toggleDarkMode = () => {
+    setIsDarkMode(prev => !prev);
   };
-
-  const clearHistory = () => {
-    setResultsHistory([]);
+  
+  const hasRequiredKeys = !!apiKeys.openrouter || useDefaultApiKey;
+  
+  const value = {
+    currentQuery,
+    setCurrentQuery,
+    currentResult,
+    setCurrentResult,
+    isLoading,
+    setIsLoading,
+    apiKeys,
+    setApiKey,
+    isModalOpen,
+    setIsModalOpen,
+    hasRequiredKeys,
+    resultsHistory,
+    setResultsHistory,
+    useDefaultApiKey,
+    setUseDefaultApiKey,
+    selectedModel,
+    setSelectedModel,
+    hasUsedFreeCheck,
+    setHasUsedFreeCheck,
+    isDarkMode,
+    toggleDarkMode,
   };
-
-  const setApiKey = (key: keyof ApiKeys, value: string) => {
-    setApiKeys(prev => ({
-      ...prev,
-      [key]: value
-    }));
-    
-    if (key === 'openrouter' && value) {
-      toast.success('OpenRouter API key saved');
-      setUseDefaultApiKey(false);
-    }
-  };
-
-  // Consider user has required keys if they're using the default key or have their own
-  const hasRequiredKeys = useDefaultApiKey || Boolean(apiKeys.openrouter);
-
-  const handleSetCurrentResult = (result: FactCheckResult | null) => {
-    setCurrentResult(result);
-    setIsLoading(false);
-    if (result) {
-      addToHistory(result);
-    }
-  };
-
-  return (
-    <FactCheckContext.Provider
-      value={{
-        isLoading,
-        currentQuery,
-        setCurrentQuery,
-        currentResult,
-        setCurrentResult: handleSetCurrentResult,
-        resultsHistory,
-        addToHistory,
-        clearHistory,
-        apiKeys,
-        setApiKey,
-        hasRequiredKeys,
-        isModalOpen,
-        setIsModalOpen,
-        selectedModel,
-        setSelectedModel,
-        isDarkMode,
-        toggleDarkMode,
-        useDefaultApiKey,
-        setUseDefaultApiKey,
-        fetchSupabaseHistory,
-        hasUsedFreeCheck,
-        setHasUsedFreeCheck,
-      }}
-    >
-      {children}
-    </FactCheckContext.Provider>
-  );
+  
+  return <FactCheckContext.Provider value={value}>{children}</FactCheckContext.Provider>;
 };
