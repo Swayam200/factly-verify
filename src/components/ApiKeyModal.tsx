@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useFactCheck } from '@/context/FactCheckContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -11,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const ApiKeyModal = () => {
   const { 
@@ -184,6 +184,19 @@ const ApiKeyModal = () => {
                   </div>
                 </RadioGroup>
               </div>
+              
+              <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+                <AlertTitle className="font-medium text-blue-800 dark:text-blue-300">How to use your own OpenRouter model</AlertTitle>
+                <AlertDescription className="text-sm text-blue-700 dark:text-blue-200">
+                  <ol className="list-decimal pl-4 space-y-1 mt-1">
+                    <li>Get your API key from <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="underline">openrouter.ai</a></li>
+                    <li>Toggle off "Use built-in API key" above</li>
+                    <li>Enter your API key</li>
+                    <li>Select "Custom OpenRouter Model" and enter the model ID</li>
+                    <li>Use provider/model format (e.g., "anthropic/claude-3-opus" or "meta-llama/llama-2")</li>
+                  </ol>
+                </AlertDescription>
+              </Alert>
             </CollapsibleContent>
           </Collapsible>
           

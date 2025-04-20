@@ -1,5 +1,5 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { openRouterModels } from '@/utils/apiManager';
 
 // Types
 export type ResultStatus = 'true' | 'false' | 'neutral' | 'unknown';
@@ -19,7 +19,7 @@ export interface FactCheckResult {
   confidenceScore: number;
   explanation: string;
   sources: Source[];
-  timestamp: string; // Changed from number to string for consistency
+  timestamp: string;
   feedback?: {
     helpful: number;
     notHelpful: number;
@@ -45,7 +45,7 @@ export interface FactCheckContextType {
   hasRequiredKeys: boolean;
   resultsHistory: FactCheckResult[];
   setResultsHistory: (history: FactCheckResult[]) => void;
-  clearHistory: () => void; // Added the missing clearHistory function
+  clearHistory: () => void;
   useDefaultApiKey: boolean;
   setUseDefaultApiKey: (useDefault: boolean) => void;
   selectedModel: string;
@@ -53,7 +53,6 @@ export interface FactCheckContextType {
   hasUsedFreeCheck: boolean;
   setHasUsedFreeCheck: (used: boolean) => void;
   
-  // Dark mode toggle
   isDarkMode: boolean;
   toggleDarkMode: () => void;
 }
@@ -70,17 +69,14 @@ export const FactCheckProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [resultsHistory, setResultsHistory] = useState<FactCheckResult[]>([]);
   const [useDefaultApiKey, setUseDefaultApiKey] = useState(true);
-  const [selectedModel, setSelectedModel] = useState('deepseek-coder');
+  const [selectedModel, setSelectedModel] = useState(openRouterModels.deepseek.id);
   const [hasUsedFreeCheck, setHasUsedFreeCheck] = useState(false);
   
-  // Dark mode state
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    // Check local storage or system preference
     const savedMode = localStorage.getItem('darkMode');
     if (savedMode !== null) {
       return savedMode === 'true';
     }
-    // Default to system preference
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
   
@@ -104,10 +100,8 @@ export const FactCheckProvider: React.FC<{ children: ReactNode }> = ({ children 
     console.log('hasRequiredKeys', hasKeys);
     console.log('apiKeys', apiKeys);
     console.log('useDefaultApiKey', useDefaultApiKey);
-    
   }, [apiKeys, useDefaultApiKey]);
   
-  // Apply dark mode class to document
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -121,12 +115,10 @@ export const FactCheckProvider: React.FC<{ children: ReactNode }> = ({ children 
     setApiKeys(prevKeys => ({ ...prevKeys, [platform]: key }));
   };
   
-  // Toggle dark mode function
   const toggleDarkMode = () => {
     setIsDarkMode(prev => !prev);
   };
   
-  // Add the clearHistory function
   const clearHistory = () => {
     setResultsHistory([]);
     localStorage.removeItem('resultsHistory');
@@ -148,7 +140,7 @@ export const FactCheckProvider: React.FC<{ children: ReactNode }> = ({ children 
     hasRequiredKeys,
     resultsHistory,
     setResultsHistory,
-    clearHistory, // Add it to the context value
+    clearHistory,
     useDefaultApiKey,
     setUseDefaultApiKey,
     selectedModel,
@@ -162,7 +154,6 @@ export const FactCheckProvider: React.FC<{ children: ReactNode }> = ({ children 
   return <FactCheckContext.Provider value={value}>{children}</FactCheckContext.Provider>;
 };
 
-// Export the hook to use the context
 export const useFactCheck = (): FactCheckContextType => {
   const context = useContext(FactCheckContext);
   if (context === undefined) {

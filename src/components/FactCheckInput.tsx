@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useFactCheck } from '@/context/FactCheckContext';
 import { Button } from '@/components/ui/button';
@@ -29,15 +30,6 @@ const FactCheckInput: React.FC = () => {
   
   const [isLoading, setIsLoading] = useState(false);
   const [query, setQuery] = useState('');
-  
-  const modelInstructions = `
-    To use your own OpenRouter model:
-    1. Get your API key from openrouter.ai
-    2. Toggle off "Use built-in API key" in Settings
-    3. Enter your API key
-    4. Use the model ID in this format: "provider/model-name"
-    Example: "anthropic/claude-2" or "meta-llama/llama-2"
-  `;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,25 +134,18 @@ const FactCheckInput: React.FC = () => {
         </div>
         
         {!currentQuery && !isLoading && (
-          <>
-            <div className="flex flex-wrap gap-2 justify-center">
-              {suggestedClaims.map((claim, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => handleSuggestedClaim(claim)}
-                  className="text-sm px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors text-primary hover-lift"
-                >
-                  {claim}
-                </button>
-              ))}
-            </div>
-            
-            <div className="mt-4 p-4 bg-primary/5 rounded-lg text-sm text-muted-foreground">
-              <p className="font-medium mb-2">💡 Pro Tip:</p>
-              <p>{modelInstructions}</p>
-            </div>
-          </>
+          <div className="flex flex-wrap gap-2 justify-center">
+            {suggestedClaims.map((claim, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => handleSuggestedClaim(claim)}
+                className="text-sm px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors text-primary hover-lift"
+              >
+                {claim}
+              </button>
+            ))}
+          </div>
         )}
       </form>
     </div>
