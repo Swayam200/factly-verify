@@ -1,4 +1,3 @@
-
 // API key management utility
 
 interface ApiKeyStorage {
@@ -83,11 +82,5 @@ export const openRouterModels = {
     name: "DeepSeek R1",
     description: "Free open-source model with 671B parameters",
     icon: "🧠"
-  },
-  gemini: {
-    id: "google/gemini-2.0-pro-exp-02-05:free",
-    name: "Google Gemini Pro 2.0",
-    description: "Free experimental model with 2M context",
-    icon: "🔍"
   }
 };
