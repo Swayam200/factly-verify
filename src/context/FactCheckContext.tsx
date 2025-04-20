@@ -19,7 +19,7 @@ export interface FactCheckResult {
   confidenceScore: number;
   explanation: string;
   sources: Source[];
-  timestamp: number;
+  timestamp: string; // Changed from number to string for consistency
   feedback?: {
     helpful: number;
     notHelpful: number;
@@ -45,6 +45,7 @@ export interface FactCheckContextType {
   hasRequiredKeys: boolean;
   resultsHistory: FactCheckResult[];
   setResultsHistory: (history: FactCheckResult[]) => void;
+  clearHistory: () => void; // Added the missing clearHistory function
   useDefaultApiKey: boolean;
   setUseDefaultApiKey: (useDefault: boolean) => void;
   selectedModel: string;
@@ -125,6 +126,12 @@ export const FactCheckProvider: React.FC<{ children: ReactNode }> = ({ children 
     setIsDarkMode(prev => !prev);
   };
   
+  // Add the clearHistory function
+  const clearHistory = () => {
+    setResultsHistory([]);
+    localStorage.removeItem('resultsHistory');
+  };
+  
   const hasRequiredKeys = !!apiKeys.openrouter || useDefaultApiKey;
   
   const value = {
@@ -141,6 +148,7 @@ export const FactCheckProvider: React.FC<{ children: ReactNode }> = ({ children 
     hasRequiredKeys,
     resultsHistory,
     setResultsHistory,
+    clearHistory, // Add it to the context value
     useDefaultApiKey,
     setUseDefaultApiKey,
     selectedModel,

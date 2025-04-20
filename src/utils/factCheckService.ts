@@ -35,7 +35,7 @@ export const verifyFact = async (
             confidenceScore: 0,
             explanation: `API Rate Limit Exceeded: The AI model is currently experiencing high traffic. Please try again in a few minutes or try a different model.`,
             sources: [],
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString() // Changed from Date.now() to ISO string
           };
         }
         throw error;
@@ -55,7 +55,7 @@ export const verifyFact = async (
       confidenceScore: 0,
       explanation: error instanceof Error ? error.message : 'An unknown error occurred',
       sources: [],
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString() // Changed from Date.now() to ISO string
     };
   }
 };

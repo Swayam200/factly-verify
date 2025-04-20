@@ -116,7 +116,7 @@ export const verifyFactWithOpenRouter = async (
       confidenceScore,
       explanation: analysis.explanation || content.substring(0, 500),
       sources,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString() // Changed from Date.now() to ISO string
     };
   } catch (error) {
     console.error('Error verifying fact with OpenRouter:', error);

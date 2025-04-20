@@ -1,6 +1,6 @@
 
 // Export all types from FactCheckContext here for backwards compatibility
-export { 
+export type { 
   FactCheckResult, 
   ResultStatus,
   Source,

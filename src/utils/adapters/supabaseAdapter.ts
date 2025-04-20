@@ -74,7 +74,7 @@ export const fetchUserFactChecks = async (userId: string | undefined): Promise<F
       confidenceScore: item.confidence_score || 0,
       explanation: item.explanation || '',
       sources: jsonToSources(item.sources),
-      timestamp: item.created_at || new Date().toISOString()
+      timestamp: item.created_at || new Date().toISOString() // Ensure we use string timestamps
     }));
   } catch (error) {
     console.error('Error fetching fact checks from Supabase:', error);
