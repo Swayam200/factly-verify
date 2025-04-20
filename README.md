@@ -1,27 +1,22 @@
-# Welcome to your Lovable project
+# Project Title
 
-## Project info
+## Project Description
+A brief description of what this project does and its purpose.
 
-**URL**: https://lovable.dev/projects/a267f67b-a655-40e2-952d-46ba9527e988
+## Project Screenshots
+![Screenshot 1](path/to/screenshot1.png)
+![Screenshot 2](path/to/screenshot2.png)
 
-## How can I edit this code?
-
+## How to Edit This Code
 There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/a267f67b-a655-40e2-952d-46ba9527e988) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
 
 **Use your preferred IDE**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in the project.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+The only requirement is having Node.js & npm installed.
 
 Follow these steps:
-
 ```sh
 # Step 1: Clone the repository using the project's Git URL.
 git clone <YOUR_GIT_URL>
@@ -50,9 +45,8 @@ npm run dev
 - Click on "New codespace" to launch a new Codespace environment.
 - Edit files directly within the Codespace and commit and push your changes once you're done.
 
-## What technologies are used for this project?
-
-This project is built with .
+## Technologies Used
+This project is built with:
 
 - Vite
 - TypeScript
@@ -60,10 +54,8 @@ This project is built with .
 - shadcn-ui
 - Tailwind CSS
 
-## How can I deploy this project?
+## How to Deploy This Project
+Follow the deployment instructions specific to your hosting provider.
 
-Simply open [Lovable](https://lovable.dev/projects/a267f67b-a655-40e2-952d-46ba9527e988) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+## Custom Domain Support
+Currently, custom domains are not supported. If you want to deploy your project under your own domain, we recommend using Netlify. Visit the documentation for more details.
