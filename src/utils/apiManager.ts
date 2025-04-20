@@ -1,3 +1,4 @@
+
 // API key management utility
 
 interface ApiKeyStorage {
@@ -75,7 +76,7 @@ export const maskApiKey = (key: string): string => {
 // Default OpenRouter API key (provided by the application)
 export const DEFAULT_OPENROUTER_API_KEY = "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";
 
-// OpenRouter models configuration
+// OpenRouter models configuration - Only DeepSeek model is available now
 export const openRouterModels = {
   deepseek: {
     id: "deepseek/deepseek-r1:free",

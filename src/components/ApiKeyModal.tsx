@@ -152,7 +152,7 @@ const ApiKeyModal = () => {
               <div className="space-y-2">
                 <h4 className="font-medium">AI Model Selection</h4>
                 <p className="text-sm text-muted-foreground">
-                  Select which AI model to use for fact checking
+                  Select which AI model to use for fact checking or enter your own OpenRouter model ID
                 </p>
                 
                 <RadioGroup value={selectedModel} onValueChange={handleModelChange} className="space-y-3 mt-2">
@@ -168,13 +168,18 @@ const ApiKeyModal = () => {
                   </div>
                   
                   <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
-                    <RadioGroupItem value={openRouterModels.gemini.id} id="gemini" />
-                    <div className="flex items-start gap-2">
-                      <div className="text-2xl">{openRouterModels.gemini.icon}</div>
-                      <div className="flex flex-col">
-                        <Label htmlFor="gemini" className="font-medium cursor-pointer">{openRouterModels.gemini.name}</Label>
-                        <span className="text-xs text-muted-foreground">{openRouterModels.gemini.description}</span>
+                    <RadioGroupItem value="custom" id="custom" />
+                    <div className="flex flex-col w-full">
+                      <Label htmlFor="custom" className="font-medium cursor-pointer">Custom OpenRouter Model</Label>
+                      <div className="flex items-center gap-2 mt-1 w-full">
+                        <Input
+                          placeholder="provider/model-name (e.g., anthropic/claude-3-opus)"
+                          className="text-xs"
+                          disabled={selectedModel !== "custom"}
+                          onChange={(e) => setSelectedModel(e.target.value)}
+                        />
                       </div>
+                      <span className="text-xs text-muted-foreground mt-1">Enter any OpenRouter model ID</span>
                     </div>
                   </div>
                 </RadioGroup>
