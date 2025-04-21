@@ -79,8 +79,8 @@ factly-verify/
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Screenshots
+![CleanShot 2025-04-21 at 11 50 10@2x](https://github.com/user-attachments/assets/ed8a53cc-8615-44a9-a014-59fa5edb8765)
 
-<!-- Add project screenshots here -->
 
 ## Support
 
